@@ -1,34 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Cognis – Archive</title>
-  <style>
-    body {
-      font-family: 'Georgia', serif;
-      background: #1b1b1b;
-      color: #e0e0e0;
-      text-align: center;
-      padding: 5em 1em;
-    }
-    a {
-      color: #77caff;
-      text-decoration: none;
-      border-bottom: 1px dashed #77caff;
-    }
-    a:hover {
-      color: #ffffff;
-    }
-  </style>
-</head>
-<body>
-  <h1>Cognis – Archive Log</h1>
-  <p>Memory fragments stored. Stability unknown.</p>
-  <p><em>Unauthorized access discouraged.</em></p>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cognis – Archive</title>
+    <style>
+      body {
+        font-family: "Georgia", serif;
+        background: #1b1b1b;
+        color: #e0e0e0;
+        text-align: center;
+        padding: 5em 1em;
+      }
+      input {
+        padding: 0.6em;
+        font-size: 1em;
+        margin-top: 2em;
+        width: 80%;
+        max-width: 300px;
+        border: none;
+        background: #2c2c2c;
+        color: #ffffff;
+        border-bottom: 2px solid #77caff;
+        outline: none;
+        text-align: center;
+      }
+      a {
+        color: #77caff;
+        text-decoration: none;
+        border-bottom: 1px dashed #77caff;
+        display: none;
+        margin-top: 2em;
+        font-size: 1.1em;
+      }
+      a.reveal {
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Cognis – Archive Log</h1>
+    <p>Memory fragments stored. Stability unknown.</p>
+    <p><em>Access phrase required.</em></p>
 
-  <!-- Link to secret page -->
-  <p style="margin-top: 4em;">
-    <a href="ModyAxiomArtifact/">Access Terminal: ModyAxiomArtifact</a>
-  </p>
-</body>
+    <input type="text" id="accessInput" placeholder="Enter access phrase..." />
+
+    <p>
+      <a id="secretLink" href="ModyAxiomArtifact/"
+        >Access Terminal: ModyAxiomArtifact</a
+      >
+    </p>
+
+    <script>
+      const input = document.getElementById("accessInput");
+      const link = document.getElementById("secretLink");
+
+      input.addEventListener("input", () => {
+        const cleaned = input.value.toLowerCase().replace(/\s+/g, "");
+        if (cleaned === "modyaxiomartifact") {
+          link.classList.add("reveal");
+        } else {
+          link.classList.remove("reveal");
+        }
+      });
+    </script>
+  </body>
 </html>
