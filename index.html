@@ -28,24 +28,29 @@
         color: #77caff;
         text-decoration: none;
         border-bottom: 1px dashed #77caff;
-        display: none;
+        display: inline-block;
         margin-top: 2em;
         font-size: 1.1em;
       }
-      a.reveal {
-        display: inline-block;
+      a.hidden {
+        display: none;
       }
     </style>
   </head>
   <body>
     <h1>Cognis – Archive Log</h1>
     <p>Memory fragments stored. Stability unknown.</p>
-    <p><em>Access phrase required.</em></p>
 
+    <!-- Public link to Cognis story -->
+    <p><a href="cognis-story.html">🧠 Read: The Soul of Invention</a></p>
+
+    <!-- Hidden passphrase input -->
+    <p><em>Access phrase required for advanced logs:</em></p>
     <input type="text" id="accessInput" placeholder="Enter access phrase..." />
 
+    <!-- Hidden link unlocked by phrase -->
     <p>
-      <a id="secretLink" href="ModyAxiomArtifact/"
+      <a id="secretLink" class="hidden" href="ModyAxiomArtifact/"
         >Access Terminal: ModyAxiomArtifact</a
       >
     </p>
@@ -57,9 +62,9 @@
       input.addEventListener("input", () => {
         const cleaned = input.value.toLowerCase().replace(/\s+/g, "");
         if (cleaned === "modyaxiomartifact") {
-          link.classList.add("reveal");
+          link.classList.remove("hidden");
         } else {
-          link.classList.remove("reveal");
+          link.classList.add("hidden");
         }
       });
     </script>
