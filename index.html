@@ -61,7 +61,11 @@
 
       input.addEventListener("input", () => {
         const cleaned = input.value.toLowerCase().replace(/\s+/g, "");
-        if (cleaned === "modyaxiomartifact") {
+        if (
+          cleaned === "modyaxiomartifact" ||
+          cleaned === "axiom mody artifact" ||
+          cleaned === "mody axiom artifact"
+        ) {
           link.classList.remove("hidden");
         } else {
           link.classList.add("hidden");
