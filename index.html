@@ -63,8 +63,11 @@
         const cleaned = input.value.toLowerCase().replace(/\s+/g, "");
         if (
           cleaned === "modyaxiomartifact" ||
-          cleaned === "axiom mody artifact" ||
-          cleaned === "mody axiom artifact"
+          cleaned === "axiommodyartifact" ||
+          cleaned === "artifactmodyaxiom" ||
+          cleaned === "artifactaxiommody" ||
+          cleaned === "modyartifactaxiom" ||
+          cleaned === "axiomartifactmody" ||
         ) {
           link.classList.remove("hidden");
         } else {
