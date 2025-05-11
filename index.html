@@ -1,34 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Cognis – Archive</title>
-  <style>
-    body {
-      font-family: 'Georgia', serif;
-      background: #1b1b1b;
-      color: #e0e0e0;
-      text-align: center;
-      padding: 5em 1em;
-    }
-    a {
-      color: #77caff;
-      text-decoration: none;
-      border-bottom: 1px dashed #77caff;
-    }
-    a:hover {
-      color: #ffffff;
-    }
-  </style>
-</head>
-<body>
-  <h1>Cognis – Archive Log</h1>
-  <p>Memory fragments stored. Stability unknown.</p>
-  <p><em>Unauthorized access discouraged.</em></p>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cognis – Archive</title>
+    <style>
+      body {
+        font-family: "Georgia", serif;
+        background: #1b1b1b;
+        color: #e0e0e0;
+        text-align: center;
+        padding: 5em 1em;
+      }
+      input {
+        padding: 0.6em;
+        font-size: 1em;
+        margin-top: 2em;
+        width: 80%;
+        max-width: 300px;
+        border: none;
+        background: #2c2c2c;
+        color: #ffffff;
+        border-bottom: 2px solid #77caff;
+        outline: none;
+        text-align: center;
+      }
+      a {
+        color: #77caff;
+        text-decoration: none;
+        border-bottom: 1px dashed #77caff;
+        display: inline-block;
+        margin-top: 2em;
+        font-size: 1.1em;
+      }
+      a.hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Cognis – Archive Log</h1>
+    <p>Memory fragments stored. Stability unknown.</p>
 
-  <!-- Link to secret page -->
-  <p style="margin-top: 4em;">
-    <a href="ModyAxiomArtifact/">Access Terminal: ModyAxiomArtifact</a>
-  </p>
-</body>
+    <!-- Public link to Cognis story -->
+    <p><a href="cognis-story.html">🧠 Read: The Soul of Invention</a></p>
+
+    <!-- Hidden passphrase input -->
+    <p><em>Access phrase required for advanced logs:</em></p>
+    <input type="text" id="accessInput" placeholder="Enter access phrase..." />
+
+    <!-- Hidden link unlocked by phrase -->
+    <p>
+      <a id="secretLink1" class="hidden" href="ModyAxiomArtifact/"
+        >Access Terminal: ModyAxiomArtifact</a
+      >
+    </p>
+    <p>
+      <a id="secretLink2" class="hidden" href="Continuity7/"
+        >Access Terminal: Continuity 7</a
+      >
+    </p>
+    <p>
+      <a id="secretLink3" class="hidden" href="ThirdSecretPage/"
+        >Access Terminal: ThirdSecretPage</a
+      >
+    </p>
+
+    <script>
+      // Define an array of phrases and corresponding links
+      const accessLinks = [
+        {
+          phrases: [
+            "modyaxiomartifact",
+            "axiommodyartifact",
+            "artifactmodyaxiom",
+            "artifactaxiommody",
+            "modyartifactaxiom",
+            "axiomartifactmody",
+          ],
+          linkId: "secretLink1",
+        },
+        {
+          phrases: ["Continuity 7", "continuityseven", "continuity7"],
+          linkId: "secretLink2",
+        },
+        {
+          phrases: ["thirdsecretphrase", "yetanotherphrase"],
+          linkId: "secretLink3",
+        },
+      ];
+
+      const input = document.getElementById("accessInput");
+
+      // Function to reveal a link based on the phrase entered
+      const revealLink = (inputValue) => {
+        // Hide all links first
+        accessLinks.forEach((link) => {
+          document.getElementById(link.linkId).classList.add("hidden");
+        });
+
+        // Check if the entered phrase matches any of the defined phrases
+        accessLinks.forEach((link) => {
+          if (link.phrases.includes(inputValue)) {
+            document.getElementById(link.linkId).classList.remove("hidden");
+          }
+        });
+      };
+
+      // Listen for user input and check for valid phrases
+      input.addEventListener("input", () => {
+        const cleanedInput = input.value.toLowerCase().replace(/\s+/g, "");
+        revealLink(cleanedInput);
+      });
+    </script>
+  </body>
 </html>
