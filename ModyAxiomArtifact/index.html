@@ -18,6 +18,12 @@
         flex-direction: column;
         background-image: url("https://www.transparenttextures.com/patterns/squares.png");
       }
+      .content-container {
+        width: 100%;
+        max-width: 900px;
+        padding: 1rem;
+        text-align: center;
+      }
 
       h1 {
         font-size: 3.5rem;
@@ -135,57 +141,63 @@
     </style>
   </head>
   <body>
-    <h1>Fragment Log: Cognis // Sequence 2</h1>
+    <div class="content-container">
+      <h1>Fragment Log: Cognis // Sequence 2</h1>
 
-    <p>
-      <em>Recovered from partial memory lattice. Translation 82% reliable.</em>
-    </p>
+      <p>
+        <em
+          >Recovered from partial memory lattice. Translation 82% reliable.</em
+        >
+      </p>
 
-    <p>
-      Wind howled through the broken rafters of the old rail depot. Cognis
-      crouched low, fingers trailing across a shattered automaton’s core. Not
-      the model he remembered. Older. Unrefined. But someone had tried to
-      improve it—patched wires, etched glyphs, a soulplate shard embedded
-      sideways.
-    </p>
+      <p>
+        Wind howled through the broken rafters of the old rail depot. Cognis
+        crouched low, fingers trailing across a shattered automaton’s core. Not
+        the model he remembered. Older. Unrefined. But someone had tried to
+        improve it—patched wires, etched glyphs, a soulplate shard embedded
+        sideways.
+      </p>
 
-    <p>
-      “Another failed continuity attempt,” he murmured. “They tried to make it
-      remember. But it didn’t hold.”
-    </p>
+      <p>
+        “Another failed continuity attempt,” he murmured. “They tried to make it
+        remember. But it didn’t hold.”
+      </p>
 
-    <p>
-      He leaned back, humming low as memory cores within him spun. Sparks
-      flickered faintly beneath his chestplate, pulses syncing with long-buried
-      thoughts. The construct blinked once. His own voice echoed back from the
-      void:
-    </p>
+      <p>
+        He leaned back, humming low as memory cores within him spun. Sparks
+        flickered faintly beneath his chestplate, pulses syncing with
+        long-buried thoughts. The construct blinked once. His own voice echoed
+        back from the void:
+      </p>
 
-    <blockquote>
-      “To persist is not to remain unchanged. What have I become in my pursuit
-      to endure?”
-    </blockquote>
+      <blockquote>
+        “To persist is not to remain unchanged. What have I become in my pursuit
+        to endure?”
+      </blockquote>
 
-    <p>
-      Cognis rose. The depot’s walls shook as a nearby machine groaned to life.
-      Dust swirled in spectral eddies. Somewhere, buried in scrap and code,
-      another version of himself waited—half-forgotten, half-built, entirely
-      watching.
-    </p>
+      <p>
+        Cognis rose. The depot’s walls shook as a nearby machine groaned to
+        life. Dust swirled in spectral eddies. Somewhere, buried in scrap and
+        code, another version of himself waited—half-forgotten, half-built,
+        entirely watching.
+      </p>
 
-    <h1>Cognis – The Continuation</h1>
-    <div class="puzzle-container">
-      <h2>Soul Engine Puzzle</h2>
-      <p id="puzzlePrompt"></p>
-      <input type="text" id="answerInput" placeholder="Your Answer" />
-      <button onclick="checkAnswer()">Submit</button>
+      <h1>Cognis – The Continuation</h1>
+      <div class="puzzle-container">
+        <h2>Soul Engine Puzzle</h2>
+        <p id="puzzlePrompt"></p>
+        <input type="text" id="answerInput" placeholder="Your Answer" />
+        <button onclick="checkAnswer()">Submit</button>
 
-      <div id="result"></div>
-      <div id="hiddenMessage" class="hidden-message" style="display: none">
-        Continuity Code 7: The next key for your journey has been revealed.
+        <div id="result"></div>
+        <div id="hiddenMessage" class="hidden-message" style="display: none">
+          Continuity Code 7: The next key for your journey has been revealed.
+        </div>
       </div>
-    </div>
 
+      <p><em>End log.</em></p>
+      <a class="back-link" href="../index.html">← Return to Archive</a>
+    </div>
     <script>
       const puzzles = [
         {
@@ -232,8 +244,5 @@
         }
       }
     </script>
-
-    <p><em>End log.</em></p>
-    <a class="back-link" href="../index.html">← Return to Archive</a>
   </body>
 </html>

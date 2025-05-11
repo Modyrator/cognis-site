@@ -5,11 +5,41 @@
     <title>Cognis – Archive</title>
     <style>
       body {
-        font-family: "Georgia", serif;
-        background: #1b1b1b;
-        color: #e0e0e0;
+        font-family: "Courier New", Courier, monospace;
+        background: #212121;
+        color: #e5e5e5;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        overflow-y: auto;
+        flex-direction: column;
+        background-image: url("https://www.transparenttextures.com/patterns/squares.png");
+      }
+      .content-container {
+        width: 100%;
+        max-width: 900px;
+        padding: 1rem;
         text-align: center;
-        padding: 5em 1em;
+      }
+      h1 {
+        font-size: 3.5rem;
+        text-align: center;
+        color: #d4af37;
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+        letter-spacing: 2px;
+        margin-bottom: 1rem;
+        border-bottom: 5px solid #d4af37;
+        padding-bottom: 10px;
+      }
+
+      h2 {
+        color: #c9a71d;
+        font-size: 2.5rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
       }
       input {
         padding: 0.6em;
@@ -80,7 +110,11 @@
           linkId: "secretLink1",
         },
         {
-          phrases: ["Continuity 7", "continuityseven", "continuity7"],
+          phrases: [
+            "Continuity Code 7",
+            "continuitycodeseven",
+            "continuitycode7",
+          ],
           linkId: "secretLink2",
         },
         {
