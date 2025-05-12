@@ -65,6 +65,13 @@
       a.hidden {
         display: none;
       }
+      .clue {
+        border-bottom: 1px dotted #7dd3fc;
+        cursor: help;
+      }
+      .clue:hover {
+        text-shadow: 0 0 5px #7dd3fc;
+      }
     </style>
   </head>
   <body>
@@ -75,7 +82,13 @@
     <p><a href="cognis-story.html">🧠 Read: The Soul of Invention</a></p>
 
     <!-- Hidden passphrase input -->
-    <p><em>Access phrase required for advanced logs:</em></p>
+    <p>
+      <em
+        ><span class="clue" title="Three Words"
+          >Access phrase required for advanced logs:</span
+        ></em
+      >
+    </p>
     <input type="text" id="accessInput" placeholder="Enter access phrase..." />
 
     <!-- Hidden link unlocked by phrase -->
