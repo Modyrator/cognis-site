@@ -197,52 +197,53 @@
 
       <p><em>End log.</em></p>
       <a class="back-link" href="../index.html">← Return to Archive</a>
-    </div>
-    <script>
-      const puzzles = [
-        {
-          prompt: `"The Soul Engine hums in three cycles: _ , Mind, Meaning."
+
+      <script>
+        const puzzles = [
+          {
+            prompt: `"The Soul Engine hums in three cycles: _ , Mind, Meaning."
         Each word begins with the same letter.`,
-          answer: "Memory",
-        },
-        {
-          prompt: `"A spark of sentience without a soul. A vessel of brass, but not whole.  
+            answer: "Memory",
+          },
+          {
+            prompt: `"A spark of sentience without a soul. A vessel of brass, but not whole.  
         What am I?"`,
-          answer: "Construct",
-        },
-        {
-          prompt: `"I am not born, yet I grow.  
+            answer: "Construct",
+          },
+          {
+            prompt: `"I am not born, yet I grow.  
         I have no blood, yet I remember.  
         Faydric made me so. What am I?"`,
-          answer: "Cognis",
-        },
-      ];
+            answer: "Cognis",
+          },
+        ];
 
-      let currentPuzzle = null;
+        let currentPuzzle = null;
 
-      // Randomly select a puzzle when the page loads
-      window.onload = function () {
-        currentPuzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
-        document.getElementById("puzzlePrompt").innerText =
-          currentPuzzle.prompt;
-      };
+        // Randomly select a puzzle when the page loads
+        window.onload = function () {
+          currentPuzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
+          document.getElementById("puzzlePrompt").innerText =
+            currentPuzzle.prompt;
+        };
 
-      function checkAnswer() {
-        const input = document
-          .getElementById("answerInput")
-          .value.trim()
-          .toLowerCase();
-        const resultDiv = document.getElementById("result");
-        const hiddenMessage = document.getElementById("hiddenMessage");
+        function checkAnswer() {
+          const input = document
+            .getElementById("answerInput")
+            .value.trim()
+            .toLowerCase();
+          const resultDiv = document.getElementById("result");
+          const hiddenMessage = document.getElementById("hiddenMessage");
 
-        if (input === currentPuzzle.answer.toLowerCase()) {
-          resultDiv.innerHTML = `<div class="correct"><strong> Correct!</strong> You have unlocked the next phase of your journey.</div>`;
-          hiddenMessage.style.display = "block";
-        } else {
-          resultDiv.innerHTML = `<div class="incorrect"><strong> Incorrect!</strong> Try again.</div>`;
-          hiddenMessage.style.display = "none";
+          if (input === currentPuzzle.answer.toLowerCase()) {
+            resultDiv.innerHTML = `<div class="correct"><strong> Correct!</strong> You have unlocked the next phase of your journey.</div>`;
+            hiddenMessage.style.display = "block";
+          } else {
+            resultDiv.innerHTML = `<div class="incorrect"><strong> Incorrect!</strong> Try again.</div>`;
+            hiddenMessage.style.display = "none";
+          }
         }
-      }
-    </script>
+      </script>
+    </div>
   </body>
 </html>
