@@ -191,7 +191,7 @@
 
         <div id="result"></div>
         <div id="hiddenMessage" class="hidden-message" style="display: none">
-          Continuity Code 7: The next key for your journey has been revealed.
+          Continuity Code 7 \n The next key for your journey has been revealed.
         </div>
       </div>
 
@@ -236,7 +236,7 @@
           const hiddenMessage = document.getElementById("hiddenMessage");
 
           if (input === currentPuzzle.answer.toLowerCase()) {
-            resultDiv.innerHTML = `<div class="correct"><strong> Correct!</strong> You have unlocked the next phase of your journey.</div>`;
+            resultDiv.innerHTML = `<div class="correct">You have unlocked the next phase of your journey.</div>`;
             hiddenMessage.style.display = "block";
           } else {
             resultDiv.innerHTML = `<div class="incorrect"><strong> Incorrect!</strong> Try again.</div>`;
