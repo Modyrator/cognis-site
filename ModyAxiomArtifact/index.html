@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>Cognis – Fragment Archive</title>
+        <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <style>
       body {
         font-family: "Courier New", Courier, monospace;
@@ -183,67 +184,62 @@
       </p>
 
       <h1>Cognis – The Continuation</h1>
-      <div class="puzzle-container">
+   <div x-data="puzzleGame" class="puzzle-container">
         <h2>Soul Engine Puzzle</h2>
-        <p id="puzzlePrompt"></p>
-        <input type="text" id="answerInput" placeholder="Your Answer" />
-        <button onclick="checkAnswer()">Submit</button>
+        <p x-text="current.prompt"></p>
 
-        <div id="result"></div>
-        <div id="hiddenMessage" class="hidden-message" style="display: none">
-          Continuity Code 7 <br />The next key for your journey has been
-          revealed.
+        <input
+          x-model="input"
+          @keyup.enter="checkAnswer"
+          type="text"
+          placeholder="Your Answer"
+        />
+
+        <button @click="checkAnswer">Submit</button>
+
+        <div
+          x-show="solved"
+          x-transition
+          class="hidden-message"
+        >
+          ✅ Continuity Code 7 unlocked: Seek deeper layers beyond this domain.
         </div>
       </div>
+    </div>
 
-      <p><em>End log.</em></p>
-      <a class="back-link" href="../index.html">← Return to Archive</a>
+    <script>
+      document.addEventListener('alpine:init', () => {
+        Alpine.data('puzzleGame', () => {
+          const puzzles = [
+            {
+              prompt: `"The Soul Engine hums in three cycles: _ , Mind, Meaning." Each word begins with the same letter.`,
+              answer: 'Memory',
+            },
+            {
+              prompt: `"A spark of sentience without a soul. A vessel of brass, but not whole. What am I?"`,
+              answer: 'Construct',
+            },
+            {
+              prompt: `"I am not born, yet I grow. I have no blood, yet I remember. Faydric made me so. What am I?"`,
+              answer: 'Cognis',
+            },
+          ];
 
-      <script>
-        const puzzles = [
-          {
-            prompt: `"The Soul Engine hums in three cycles: _ , Mind, Meaning."
-        Each word begins with the same letter.`,
-            answer: "Memory",
-          },
-          {
-            prompt: `"A spark of sentience without a soul. A vessel of brass, but not whole.  
-        What am I?"`,
-            answer: "Construct",
-          },
-          {
-            prompt: `"I am not born, yet I grow.  
-        I have no blood, yet I remember.  
-        Faydric made me so. What am I?"`,
-            answer: "Cognis",
-          },
-        ];
+          const selected = puzzles[Math.floor(Math.random() * puzzles.length)];
 
-        let currentPuzzle = null;
-
-        window.onload = function () {
-          currentPuzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
-          document.getElementById("puzzlePrompt").innerText =
-            currentPuzzle.prompt;
-        };
-
-        function checkAnswer() {
-          const input = document
-            .getElementById("answerInput")
-            .value.trim()
-            .toLowerCase();
-          const resultDiv = document.getElementById("result");
-          const hiddenMessage = document.getElementById("hiddenMessage");
-
-          if (input === currentPuzzle.answer.toLowerCase()) {
-            resultDiv.innerHTML = `<div class="correct">You have unlocked the next phase of your journey.</div>`;
-            hiddenMessage.style.display = "block";
-          } else {
-            resultDiv.innerHTML = `<div class="incorrect"><strong> Incorrect!</strong> Try again.</div>`;
-            hiddenMessage.style.display = "none";
-          }
-        }
-      </script>
+          return {
+            current: selected,
+            input: '',
+            solved: false,
+            checkAnswer() {
+              this.solved =
+                this.input.trim().toLowerCase() ===
+                this.current.answer.toLowerCase();
+            },
+          };
+        });
+      });
+    </script>
     </div>
   </body>
 </html>
