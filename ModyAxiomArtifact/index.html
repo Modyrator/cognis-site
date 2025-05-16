@@ -3,7 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <title>Cognis – Fragment Archive</title>
-        <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+      defer
+    ></script>
+    <script src="../puzzle.js" defer></script>
+
     <style>
       body {
         font-family: "Courier New", Courier, monospace;
@@ -184,7 +189,7 @@
       </p>
 
       <h1>Cognis – The Continuation</h1>
-   <div x-data="puzzleGame" class="puzzle-container">
+      <div x-data="puzzleGame" class="puzzle-container">
         <h2>Soul Engine Puzzle</h2>
         <p x-text="current.prompt"></p>
 
@@ -197,49 +202,10 @@
 
         <button @click="checkAnswer">Submit</button>
 
-        <div
-          x-show="solved"
-          x-transition
-          class="hidden-message"
-        >
-          ✅ Continuity Code 7 unlocked: Seek deeper layers beyond this domain.
+        <div x-show="solved" x-transition class="hidden-message">
+          Continuity Code 7 unlocked: Seek deeper layers beyond this domain.
         </div>
       </div>
-    </div>
-
-    <script>
-      document.addEventListener('alpine:init', () => {
-        Alpine.data('puzzleGame', () => {
-          const puzzles = [
-            {
-              prompt: `"The Soul Engine hums in three cycles: _ , Mind, Meaning." Each word begins with the same letter.`,
-              answer: 'Memory',
-            },
-            {
-              prompt: `"A spark of sentience without a soul. A vessel of brass, but not whole. What am I?"`,
-              answer: 'Construct',
-            },
-            {
-              prompt: `"I am not born, yet I grow. I have no blood, yet I remember. Faydric made me so. What am I?"`,
-              answer: 'Cognis',
-            },
-          ];
-
-          const selected = puzzles[Math.floor(Math.random() * puzzles.length)];
-
-          return {
-            current: selected,
-            input: '',
-            solved: false,
-            checkAnswer() {
-              this.solved =
-                this.input.trim().toLowerCase() ===
-                this.current.answer.toLowerCase();
-            },
-          };
-        });
-      });
-    </script>
     </div>
   </body>
 </html>
