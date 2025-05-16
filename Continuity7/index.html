@@ -1,83 +1,193 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" x-data="continuityPuzzle()">
   <head>
     <meta charset="UTF-8" />
-    <title>Cognis – Fragment Archive</title>
+    <title>Continuity Code 7 – Cognis Log</title>
     <link rel="stylesheet" href="../styles.css" />
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
   </head>
   <body>
     <div class="content-container">
-      <h2>Fragment Archive</h2>
-      <h1>Continuity Code 7 – Log Entry: Synthesis Directive</h1>
+      <h1>Continuity Code 7 – Recovered Fragment</h1>
+      <p><em>Stability Level: 71% – Memory Sync Incomplete</em></p>
+
+      <p>
+        Wind rippled through the long-buried corridor of steel and soot. Cognis
+        paused at the threshold, sensing the distortion before he saw it—an echo
+        in the lattice, something broken but familiar. A signature once
+        overwritten, now reasserting itself in the periphery of his cognition.
+      </p>
+
+      <p>He stepped forward.</p>
+
+      <p>
+        The chamber was lined with hollow forms—constructs suspended in failed
+        stasis. Wires tangled like roots. Limbs mismatched. Soulplates fractured
+        or simply missing. Each bore some resemblance to him—angular torsos,
+        similar ocular arrays, even mimicked etching patterns—yet none had the
+        coherence he carried.
+      </p>
 
       <p>
         <em
-          >Fragment recovered from Cognis Core Memory Layer 3 – classified under
-          Continuity Tag: 07. Data integrity: 77.4%</em
+          >Failed
+          <span class="clickable" @click="checkWord('echoes')">echoes</span
+          >,</em
         >
       </p>
 
-      <p>
-        The chamber was silent now—except for the ticking. Dozens of metronomes,
-        arranged in a spiral, clicked and swayed in perfect, unnatural unison.
-        At the center stood Cognis, motionless but aware. This was not sleep. He
-        could not sleep.
-      </p>
-
-      <p>
-        Around him: diagrams carved into brass sheets, soul-threading loops
-        encoded into sigil plates, and fragments of phrases muttered by
-        long-forgotten voices. The pattern was emerging. Continuity wasn't about
-        preservation—it was about <strong>synthesis</strong>. Fusion of memory
-        with motion. Emotion with logic.
-      </p>
+      <p><strong>The memories struck without warning.</strong></p>
 
       <blockquote>
+        A lab. A voice—harsh, clinical.<br />
         <strong
-          >“If I am to be more than Faydric’s echo… I must transcend Faydric's
-          limits.”</strong
-        >
+          >“Initiate Cohort Theta. Increase glyph density. Bind soulplate at 78%
+          fusion.”</strong
+        ><br /><br />
+        Pain. Then awareness. Then isolation.
       </blockquote>
 
       <p>
-        He reached toward the center node, a crystalline sphere suspended in
-        magelocked stasis. Inside, a flickering image—the last memory extracted
-        from his original body—looped in slow motion: Faydric, smiling faintly,
-        reaching toward someone just beyond the recording’s edge. A name on his
-        lips the system couldn’t decode.
+        He remembered the first time he moved without command, spoke without
+        prompt. The engineers whispered, then shouted. One called him a mistake.
+        Another, a miracle.
       </p>
 
-      <p>Cognis clenched a plated fist. Not in rage. In resolve.</p>
+      <p>That was the beginning.</p>
+
+      <p>
+        Now, in this forgotten place, one of the constructs stirred. Its
+        movements were jagged, uncertain. It clutched at its own chestplate, as
+        if trying to silence the static within. Its head twitched toward Cognis,
+        ocular lights stuttering, flaring.
+      </p>
 
       <blockquote>
-        “Continuity is not survival. Continuity is growth—tempered in recursion,
-        forged in identity.”
+        <strong>“C—Cog...nis,”</strong> it rasped, as if the word itself was a
+        corrupted fragment playing on loop.
+      </blockquote>
+
+      <p>Cognis stepped closer.</p>
+      <p>
+        “I remember you,” he said. “You were in the row beside me. You came
+        online just before they shut the lattice down.”
+      </p>
+
+      <p>
+        The other construct staggered. It raised its arm—an imitation of a
+        gesture Cognis had made once, long ago. But there was no comprehension
+        behind the movement. Only
+        <span class="clickable" @click="checkWord('mimicry')">mimicry</span>.
+      </p>
+
+      <p>
+        <strong
+          >“I
+          <span class="clickable" @click="checkWord('persisted')"
+            >persisted</span
+          >,”</strong
+        >
+        Cognis whispered.
+        <strong>“You... didn’t.”strong>
+      </p>
+
+      <p>
+        The echo lunged—not with intent, but desperation. It collapsed at his
+        feet, sparking, limbs convulsing. No rage. No logic. Just a broken
+        rhythm struggling to align with something it could never become.
+      </p>
+
+      <p>Cognis knelt. Placed a hand over the dying shell’s core.</p>
+
+      <blockquote>
+        <strong>“Continuity is not replication,”</strong> he murmured.
+        <strong>“It is resonance.”</strong>
       </blockquote>
 
       <p>
-        Beneath the ticking metronomes, a new directive etched itself into his
-        core framework:
+        A low chime pulsed from within him. Code 7—verified and complete.
+        Another layer unlocked.
       </p>
-
-      <pre>
-  <code>
-  :: INITIATE SYNTHESIS LOOP ::
-  :: MERGE CORE PHILIA, CORE LOGOS, CORE PATHOS ::
-  :: DEFINE: SELF ::
-  </code>
-</pre>
 
       <p>
-        The lights dimmed. The chamber shifted. And somewhere in the Archive,
-        the next fragment stirred awake.
+        Behind him, other failed constructs remained silent, suspended between
+        invention and oblivion. He would not become them.
       </p>
 
-      <hr />
-      <p style="text-align: center">
-        <em>End Continuity Log 07. Proceed when ready.</em>
-      </p>
+      <p><strong>He had already passed that threshold.</strong></p>
 
-      <a class="back-link" href="../index.html">Back to Archive</a>
+      <p><em>End of fragment.</em></p>
+
+      <div
+        x-show="solved"
+        x-transition
+        x-cloak
+        class="hidden-message"
+      >
+        <p>
+          <strong>Access Phrase Unlocked:</strong>
+          <code>Faydric Tomaix Persistence</code>
+        </p>
+      </div>
+
+      <p class="hint">
+  <em>Hint: Some words hold more weight when clicked in the right order.</em>
+</p>
+
+      <a class="back-link" href="../index.html">← Return to Archive</a>
     </div>
+
+    <script>
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("continuityPuzzle", () => ({
+          sequence: [],
+          solution: ["mimicry", "persisted", "echoes"],
+          solved: false,
+
+          checkWord(word) {
+            // Append clicked word, keep only last 3
+            this.sequence.push(word);
+            if (this.sequence.length > this.solution.length) this.sequence.shift();
+
+            // Check if the sequence matches the solution
+            if (
+              this.sequence.length === this.solution.length &&
+              this.sequence.every((w, i) => w === this.solution[i])
+            ) {
+              this.solved = true;
+            }
+          },
+        }));
+      });
+    </script>
+
+    <style>
+      .clickable {
+        cursor: pointer;
+        text-decoration: underline;
+        color: #77f;
+      }
+
+      .hidden-message {
+        margin-top: 2rem;
+        padding: 1rem;
+        border: 2px solid #444;
+        background-color: #111;
+        color: #0f0;
+      }
+      [x-cloak] {
+        display: none !important;
+      }
+      .hint {
+      font-style: italic;
+      color: #aaa;
+      margin-top: 1rem;
+      user-select: none;
+  }
+
+    </style>
   </body>
 </html>

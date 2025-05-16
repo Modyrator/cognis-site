@@ -15,6 +15,16 @@ body {
 }
 
 /* Container for all content */
+.content-container {
+  max-width: 700px;
+  width: 90%;
+  padding: 2rem;
+  margin-top: 4rem;
+  background: #2a2a2a;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+}
+
 .main-content {
   max-width: 800px;
   padding: 2rem;
@@ -46,6 +56,7 @@ h2 {
 p {
   margin: 1.2em 0;
   text-indent: 1.5em;
+  text-align: center;
 }
 .divider {
   margin: 2em 0;
@@ -71,8 +82,8 @@ input[type="text"] {
   padding: 0.6rem;
   font-size: 1.2rem;
   width: 60%;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
+  margin: 1rem auto;
+  display: block;
   border: 2px solid #777;
   border-radius: 5px;
   background-color: #222;
@@ -151,4 +162,26 @@ a:hover {
 }
 .clue:hover {
   text-shadow: 0 0 5px #7dd3fc;
+}
+.hidden {
+  display: none !important;
+}
+.secret-word {
+  cursor: pointer;
+  text-decoration: underline dotted;
+  color: #aac;
+  transition: color 0.3s;
+}
+.secret-word:hover {
+  color: #ddf;
+}
+.secret-reveal {
+  margin-top: 2rem;
+  background-color: #111;
+  padding: 1rem;
+  border: 1px solid #555;
+  border-radius: 8px;
+  color: #0f0;
+  text-align: center;
+  font-family: monospace;
 }

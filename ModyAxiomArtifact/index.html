@@ -7,6 +7,7 @@
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
       defer
     ></script>
+    <script src="//unpkg.com/alpinejs" defer></script>
     <script src="puzzle.js" defer></script>
     <link rel="stylesheet" href="../styles.css" />
   </head>
@@ -53,8 +54,32 @@
       </p>
 
       <h1>Cognis – The Continuation</h1>
-      <div x-data="puzzleGame" class="puzzle-container">
-        <h2>Soul Engine Puzzle</h2>
+      <div
+        x-data="{
+  puzzles: [
+    { prompt: 'The Soul Engine hums in three cycles: _ , Mind, Meaning.', answer: 'Memory' },
+    { prompt: 'A spark of sentience without a soul. A vessel of brass, but not whole. What am I?', answer: 'Construct' },
+    { prompt: 'I am not born, yet I grow. I have no blood, yet I remember. Faydric made me so. What am I?', answer: 'Cognis' }
+  ],
+  current: {},
+  input: '',
+  solved: false,
+  init() {
+    this.current = this.puzzles[Math.floor(Math.random() * this.puzzles.length)];
+  },
+  checkAnswer() {
+    if (this.input.trim().toLowerCase() === this.current.answer.toLowerCase()) {
+      this.solved = true;
+    } else {
+      this.solved = false;
+      alert('Incorrect, try again.');
+    }
+  }
+}"
+        x-init="init()"
+        class="puzzle-container"
+      >
+        <h2>The Soul Engine Hums</h2>
         <p x-text="current.prompt"></p>
 
         <input
@@ -67,9 +92,10 @@
         <button @click="checkAnswer">Submit</button>
 
         <div x-show="solved" x-transition class="hidden-message">
-          Continuity Code 7 unlocked: Seek deeper layers beyond this domain.
+          Access Code Unlocked: Continuity Code 7
         </div>
       </div>
+      <a class="back-link" href="../index.html">← Return to Archive</a>
     </div>
   </body>
 </html>
