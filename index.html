@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <title>Cognis – Archive</title>
     <link rel="stylesheet" href="styles.css" />
+    <style>
+      .hidden {
+        display: none;
+      }
+    </style>
   </head>
   <body>
     <div class="content-container">
@@ -43,55 +48,68 @@
           Access Terminal: ThirdSecretPage
         </a>
       </p>
-
-      <script>
-        // Define an array of phrases and corresponding links
-        const accessLinks = [
-          {
-            phrases: [
-              "modyaxiomartifact",
-              "axiommodyartifact",
-              "artifactmodyaxiom",
-              "artifactaxiommody",
-              "modyartifactaxiom",
-              "axiomartifactmody",
-            ],
-            linkId: "secretLink1",
-          },
-          {
-            phrases: [
-              "continuitycode7",
-              "continuitycodeseven",
-              "continuity code 7",
-            ],
-            linkId: "secretLink2",
-          },
-          {
-            phrases: ["thirdsecretphrase", "yetanotherphrase"],
-            linkId: "secretLink3",
-          },
-        ];
-
-        const input = document.getElementById("accessInput");
-
-        // Reveal link if a matching passphrase is entered
-        function revealLink(inputValue) {
-          accessLinks.forEach((link) => {
-            document.getElementById(link.linkId).classList.add("hidden");
-          });
-
-          accessLinks.forEach((link) => {
-            if (link.phrases.includes(inputValue)) {
-              document.getElementById(link.linkId).classList.remove("hidden");
-            }
-          });
-        }
-
-        input.addEventListener("input", () => {
-          const cleaned = input.value.toLowerCase().replace(/\s+/g, "");
-          revealLink(cleaned);
-        });
-      </script>
     </div>
+
+    <script>
+      // Obfuscated passphrases using base64
+      const accessLinks = [
+        {
+          phrases: [
+            btoa("modyaxiomartifact"),
+            btoa("axiommodyartifact"),
+            btoa("artifactmodyaxiom"),
+            btoa("artifactaxiommody"),
+            btoa("modyartifactaxiom"),
+            btoa("axiomartifactmody"),
+          ],
+          linkId: "secretLink1",
+        },
+        {
+          phrases: [
+            btoa("continuitycode7"),
+            btoa("continuitycodeseven"),
+            btoa("continuity code 7"),
+          ],
+          linkId: "secretLink2",
+        },
+        {
+          phrases: [btoa("Faydric Tomaix Persistence")],
+          linkId: "secretLink3",
+        },
+      ];
+
+      const input = document.getElementById("accessInput");
+
+      // Load revealed links from localStorage on page load
+      document.addEventListener("DOMContentLoaded", () => {
+        const unlocked = JSON.parse(
+          localStorage.getItem("unlockedLinks") || "[]"
+        );
+        unlocked.forEach((linkId) => {
+          const el = document.getElementById(linkId);
+          if (el) el.classList.remove("hidden");
+        });
+      });
+
+      input.addEventListener("input", () => {
+        const cleaned = input.value.toLowerCase().replace(/\s+/g, "");
+        const encoded = btoa(cleaned);
+        const unlocked = new Set(
+          JSON.parse(localStorage.getItem("unlockedLinks") || "[]")
+        );
+
+        accessLinks.forEach((link) => {
+          if (link.phrases.includes(encoded)) {
+            document.getElementById(link.linkId)?.classList.remove("hidden");
+            unlocked.add(link.linkId);
+          }
+        });
+
+        localStorage.setItem(
+          "unlockedLinks",
+          JSON.stringify(Array.from(unlocked))
+        );
+      });
+    </script>
   </body>
 </html>
