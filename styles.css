@@ -136,7 +136,7 @@ blockquote {
 /* Links */
 a {
   color: #f8b600;
-  text-decoration: none;
+  text-decoration: underline rgb(0, 132, 255);
   transition: color 0.2s;
 }
 
