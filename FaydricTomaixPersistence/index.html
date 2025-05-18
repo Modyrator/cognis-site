@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>⚠ Countdown Initialized</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #000;
+        color: #00ffcc;
+        font-family: "Courier New", monospace;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        text-align: center;
+      }
+
+      img {
+        max-width: 300px;
+        height: auto;
+        margin-bottom: 20px;
+      }
+
+      .countdown {
+        font-size: 2rem;
+        letter-spacing: 2px;
+        text-shadow: 0 0 10px #0ff;
+      }
+    </style>
+  </head>
+  <body>
+    <img src="death.gif" alt="Skull Countdown" />
+    <div class="countdown" id="countdown">Initializing...</div>
+
+    <script>
+      // Set target to July 19, current year, at 00:00:00
+      const targetDate = new Date();
+      const targetYear =
+        targetDate.getMonth() > 6
+          ? targetDate.getFullYear() + 1
+          : targetDate.getFullYear(); // If past July, set next year
+      const finalDate = new Date(`${targetYear}-07-19T00:00:00`);
+
+      const countdownEl = document.getElementById("countdown");
+
+      function updateCountdown() {
+        const now = new Date().getTime();
+        const distance = finalDate.getTime() - now;
+
+        if (distance <= 0) {
+          countdownEl.innerHTML = "⛔ TIME EXPIRED ⛔";
+          return;
+        }
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((distance / (1000 * 60)) % 60);
+        const seconds = Math.floor((distance / 1000) % 60);
+
+        countdownEl.innerHTML = `Countdown: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+      }
+
+      setInterval(updateCountdown, 1000);
+      updateCountdown(); // Initial call
+    </script>
+  </body>
+</html>
