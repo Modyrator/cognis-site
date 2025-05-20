@@ -6,10 +6,6 @@ document.addEventListener("alpine:init", () => {
         answer: "Memory",
       },
       {
-        prompt: `"A spark of sentience without a soul. A vessel of brass, but not whole. What am I?"`,
-        answer: "Construct",
-      },
-      {
         prompt: `"I am not born, yet I grow. I have no blood, yet I remember. Faydric made me so. What am I?"`,
         answer: "Cognis",
       },
