@@ -6,7 +6,7 @@ document.addEventListener("alpine:init", () => {
         answer: "Memory",
       },
       {
-        prompt: `"I am not born, yet I grow. I have no blood, yet I remember. Faydric made me so. What am I?"`,
+        prompt: `"I am not born, yet I grow. I have no blood, yet I remember. Faydric made me so. Who am I?"`,
         answer: "Cognis",
       },
     ];
