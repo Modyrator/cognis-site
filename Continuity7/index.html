@@ -1,16 +1,20 @@
 <!DOCTYPE html>
 <html lang="en" x-data="continuityPuzzle()">
   <head>
-    
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-QDCFB8HETF"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <!-- Google tag (gtag.js) -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-QDCFB8HETF"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
 
-  gtag('config', 'G-QDCFB8HETF');
-</script>
+      gtag("config", "G-QDCFB8HETF");
+    </script>
 
     <meta charset="UTF-8" />
     <title>Continuity Code 7 – Cognis Log</title>
@@ -102,9 +106,8 @@
           >,”</strong
         >
         Cognis whispered.
-        <strong>“You... didn’t.”strong>
+        <strong>“You... didn’t.”</strong>
       </p>
-
       <p>
         The echo lunged—not with intent, but desperation. It collapsed at his
         feet, sparking, limbs convulsing. No rage. No logic. Just a broken
@@ -132,12 +135,7 @@
 
       <p><em>End of fragment.</em></p>
 
-      <div
-        x-show="solved"
-        x-transition
-        x-cloak
-        class="hidden-message"
-      >
+      <div x-show="solved" x-transition x-cloak class="hidden-message">
         <p>
           <strong>Access Phrase Unlocked:</strong>
           <code>73RRA ROBOT WORLD</code>
@@ -145,8 +143,11 @@
       </div>
 
       <p class="hint">
-  <em>Hint: Some words hold more weight when clicked in the right order.</em>
-</p>
+        <em
+          >Hint: Some words hold more weight when clicked in the right
+          order.</em
+        >
+      </p>
 
       <a class="back-link" href="../index.html">← Return to Archive</a>
     </div>
@@ -161,7 +162,8 @@
           checkWord(word) {
             // Append clicked word, keep only last 3
             this.sequence.push(word);
-            if (this.sequence.length > this.solution.length) this.sequence.shift();
+            if (this.sequence.length > this.solution.length)
+              this.sequence.shift();
 
             // Check if the sequence matches the solution
             if (
@@ -193,12 +195,11 @@
         display: none !important;
       }
       .hint {
-      font-style: italic;
-      color: #aaa;
-      margin-top: 1rem;
-      user-select: none;
-  }
-
+        font-style: italic;
+        color: #aaa;
+        margin-top: 1rem;
+        user-select: none;
+      }
     </style>
   </body>
 </html>
