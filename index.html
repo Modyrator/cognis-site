@@ -12,7 +12,6 @@
         dataLayer.push(arguments);
       }
       gtag("js", new Date());
-
       gtag("config", "G-QDCFB8HETF");
     </script>
 
@@ -20,8 +19,51 @@
     <title>Cognis – Archive</title>
     <link rel="stylesheet" href="styles.css" />
     <style>
-      .hidden {
-        display: none;
+      .big-link {
+        font-size: 2rem;
+        color: #ff004c;
+        font-weight: bold;
+        text-transform: uppercase;
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 20px;
+        border: 2px solid #ff004c;
+        border-radius: 8px;
+        text-decoration: none;
+        background: black;
+        animation: pulse 1.5s infinite alternate;
+      }
+
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 10px #ff004c;
+        }
+        100% {
+          box-shadow: 0 0 30px #ff004c, 0 0 60px #ff004c;
+        }
+      }
+
+      .content-container {
+        text-align: center;
+        font-family: "Courier New", monospace;
+      }
+
+      h1 {
+        margin-bottom: 10px;
+      }
+
+      a {
+        color: #00ffcc;
+        text-decoration: none;
+        display: block;
+        margin: 10px 0;
+      }
+
+      input {
+        margin-top: 10px;
+        padding: 8px;
+        font-size: 1rem;
+        text-align: center;
       }
     </style>
   </head>
@@ -30,14 +72,14 @@
       <h1>Cognis – Archive Log</h1>
       <p>Memory fragments stored. Stability unknown.</p>
 
-      <!-- Public link to Cognis story -->
+      <!-- Public link -->
       <p>
         <a href="cognis-story.html"
           >▶ Read First Entry: The Soul of Invention</a
         >
       </p>
 
-      <!-- Hidden passphrase input -->
+      <!-- Hidden phrase hint (optional) -->
       <p>
         <em>
           <span class="clue" title="Three Words">
@@ -51,90 +93,22 @@
         placeholder="Enter access phrase..."
       />
 
-      <!-- Hidden links unlocked by valid passphrases -->
+      <!-- Advanced links (all now visible) -->
       <p>
-        <a id="secretLink1" class="hidden" href="ModyAxiomArtifact/">
+        <a id="secretLink1" href="ModyAxiomArtifact/">
           Access Terminal: ModyAxiomArtifact
         </a>
       </p>
       <p>
-        <a id="secretLink2" class="hidden" href="Continuity7/">
+        <a id="secretLink2" href="Continuity7/">
           Access Terminal: Continuity 7
         </a>
       </p>
       <p>
-        <a id="secretLink3" class="hidden" href="FaydricTomaixPersistence/">
+        <a id="secretLink3" class="big-link" href="FaydricTomaixPersistence/">
           Access Terminal: 73rra Robot World
         </a>
       </p>
     </div>
-
-    <script>
-      // Obfuscated passphrases using base64
-      const accessLinks = [
-        {
-          phrases: [
-            btoa("modyaxiomartifact"),
-            btoa("axiommodyartifact"),
-            btoa("artifactmodyaxiom"),
-            btoa("artifactaxiommody"),
-            btoa("modyartifactaxiom"),
-            btoa("axiomartifactmody"),
-          ],
-          linkId: "secretLink1",
-        },
-        {
-          phrases: [
-            btoa("continuitycode7"),
-            btoa("continuitycodeseven"),
-            btoa("continuity code 7"),
-          ],
-          linkId: "secretLink2",
-        },
-        {
-          phrases: [
-            btoa("73rrarobotworld"),
-            btoa("73rraworldrobot"),
-            btoa("robotworld73rra"),
-            btoa("robot73rrarworld"),
-            btoa("world73rrarobot"),
-          ],
-          linkId: "secretLink3",
-        },
-      ];
-
-      const input = document.getElementById("accessInput");
-
-      // Load revealed links from localStorage on page load
-      document.addEventListener("DOMContentLoaded", () => {
-        const unlocked = JSON.parse(
-          localStorage.getItem("unlockedLinks") || "[]"
-        );
-        unlocked.forEach((linkId) => {
-          const el = document.getElementById(linkId);
-          if (el) el.classList.remove("hidden");
-        });
-      });
-
-      input.addEventListener("input", () => {
-        const cleaned = input.value.toLowerCase().replace(/\s+/g, "");
-        const encoded = btoa(cleaned);
-        const unlocked = new Set(
-          JSON.parse(localStorage.getItem("unlockedLinks") || "[]")
-        );
-
-        accessLinks.forEach((link) => {
-          if (link.phrases.includes(encoded)) {
-            document.getElementById(link.linkId)?.classList.remove("hidden");
-            unlocked.add(link.linkId);
-          }
-        });
-
-        localStorage.setItem(
-          "unlockedLinks",
-          JSON.stringify(Array.from(unlocked))
-        );
-      });
-    </script>
   </body>
 </html>
