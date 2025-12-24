@@ -18,26 +18,32 @@ const player = {
 const gravity = 0.6;
 const jumpForce = -14;
 
+/* CAMERA */
+const camera = {
+  offsetY: 0,
+  threshold: canvas.height * 0.35,
+};
+
 /* PLATFORMS */
 const platforms = [];
-const platformCount = 6;
+const platformCount = 7;
+const platformGap = 140;
 const platformSpeed = 2;
 
-/* CREATE PLATFORMS */
+/* INIT */
 function initPlatforms() {
   platforms.length = 0;
 
   for (let i = 0; i < platformCount; i++) {
     platforms.push({
       x: Math.random() * (canvas.width - 100),
-      y: canvas.height - 60 - i * 140,
+      y: canvas.height - i * platformGap,
       width: 100,
       height: 10,
       dir: Math.random() < 0.5 ? -1 : 1,
     });
   }
 
-  // Safe start: put player on first platform
   player.y = platforms[0].y - player.height;
   player.dy = 0;
   player.jumping = false;
@@ -53,15 +59,25 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-/* GAME LOOP */
+/* LOOP */
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  /* Player physics */
+  /* PLAYER PHYSICS */
   player.dy += gravity;
   player.y += player.dy;
 
-  /* Platform movement */
+  /* CAMERA SCROLL */
+  if (player.y < camera.threshold) {
+    const delta = camera.threshold - player.y;
+    player.y = camera.threshold;
+
+    platforms.forEach((p) => {
+      p.y += delta;
+    });
+  }
+
+  /* PLATFORM MOVEMENT */
   platforms.forEach((p) => {
     p.x += platformSpeed * p.dir;
     if (p.x <= 0 || p.x + p.width >= canvas.width) {
@@ -69,7 +85,7 @@ function update() {
     }
   });
 
-  /* Collision */
+  /* COLLISION */
   platforms.forEach((p) => {
     if (
       player.dy > 0 &&
@@ -84,18 +100,27 @@ function update() {
     }
   });
 
-  /* Death */
-  if (player.y > canvas.height + 50) {
+  /* RECYCLE PLATFORMS */
+  platforms.forEach((p) => {
+    if (p.y > canvas.height + 20) {
+      p.y = -platformGap;
+      p.x = Math.random() * (canvas.width - p.width);
+      p.dir = Math.random() < 0.5 ? -1 : 1;
+    }
+  });
+
+  /* DEATH */
+  if (player.y > canvas.height + 80) {
     initPlatforms();
   }
 
-  /* Draw platforms */
+  /* DRAW PLATFORMS */
   ctx.fillStyle = "#555";
   platforms.forEach((p) => {
     ctx.fillRect(p.x, p.y, p.width, p.height);
   });
 
-  /* Draw player */
+  /* DRAW PLAYER */
   ctx.fillStyle = "#d4af37";
   ctx.fillRect(player.x, player.y, player.width, player.height);
 
