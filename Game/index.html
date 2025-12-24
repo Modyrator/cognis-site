@@ -7,7 +7,7 @@
       body {
         margin: 0;
         padding: 0;
-        background: #000;
+        background: black;
         overflow: hidden;
         font-family: "Courier New", monospace;
         color: #d4af37;
@@ -15,7 +15,10 @@
 
       canvas {
         display: block;
+        margin: 0 auto;
         background: radial-gradient(circle at center, #111, #000);
+        border-left: 2px solid #333;
+        border-right: 2px solid #333;
       }
 
       .overlay {
@@ -26,15 +29,22 @@
         pointer-events: none;
       }
 
-      h1 {
-        margin: 0;
-        font-size: 1.5rem;
-        letter-spacing: 2px;
-      }
-
       .hint {
         font-size: 0.8rem;
         opacity: 0.6;
+      }
+
+      .back-link {
+        pointer-events: auto;
+        display: inline-block;
+        margin-top: 10px;
+        color: #888;
+        text-decoration: none;
+        font-size: 0.8rem;
+      }
+
+      .back-link:hover {
+        color: #d4af37;
       }
     </style>
     <title>Cognis – Ascension Trial</title>
@@ -42,10 +52,12 @@
   </head>
   <body>
     <canvas id="game"></canvas>
+
     <div class="overlay">
       <h1>ASCENSION PROTOCOL</h1>
       <p>Climb. Persist. Do not fall.</p>
       <p class="hint">← → or A D</p>
+      <a class="back-link" href="../index.html">⮐ Return to Archive</a>
     </div>
 
     <script src="game.js"></script>
