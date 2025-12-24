@@ -1,78 +1,75 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-/* THINNER MAP */
-const GAME_WIDTH = 360;
-canvas.width = GAME_WIDTH;
+/* GAME SIZE */
+canvas.width = 360;
 canvas.height = window.innerHeight;
 
-const gravity = 0.5;
-const jumpForce = -12;
-
+/* PLAYER */
 const player = {
-  x: GAME_WIDTH / 2 - 15,
-  y: 0,
+  x: canvas.width / 2 - 15,
+  y: canvas.height - 120,
   width: 30,
   height: 30,
   dy: 0,
-  dx: 0,
+  jumping: false,
 };
 
-const platforms = [];
-const platformCount = 8;
+const gravity = 0.6;
+const jumpForce = -14;
 
-/* CREATE SAFE START */
-function createPlatforms() {
+/* PLATFORMS */
+const platforms = [];
+const platformCount = 6;
+const platformSpeed = 2;
+
+/* CREATE PLATFORMS */
+function initPlatforms() {
   platforms.length = 0;
 
-  // Starting platform (guaranteed)
-  platforms.push({
-    x: GAME_WIDTH / 2 - 50,
-    y: canvas.height - 80,
-    width: 100,
-    height: 10,
-  });
-
-  // Remaining platforms
-  for (let i = 1; i < platformCount; i++) {
+  for (let i = 0; i < platformCount; i++) {
     platforms.push({
-      x: Math.random() * (GAME_WIDTH - 80),
-      y: canvas.height - 80 - i * 120,
-      width: 80,
+      x: Math.random() * (canvas.width - 100),
+      y: canvas.height - 60 - i * 140,
+      width: 100,
       height: 10,
+      dir: Math.random() < 0.5 ? -1 : 1,
     });
   }
 
-  // Place player on starting platform
+  // Safe start: put player on first platform
   player.y = platforms[0].y - player.height;
   player.dy = 0;
+  player.jumping = false;
 }
 
-createPlatforms();
+initPlatforms();
 
 /* INPUT */
-const keys = {};
-window.addEventListener("keydown", (e) => (keys[e.key] = true));
-window.addEventListener("keyup", (e) => (keys[e.key] = false));
+window.addEventListener("keydown", (e) => {
+  if (e.code === "Space" && !player.jumping) {
+    player.dy = jumpForce;
+    player.jumping = true;
+  }
+});
 
+/* GAME LOOP */
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Movement
-  if (keys["ArrowLeft"] || keys["a"]) player.dx = -4;
-  else if (keys["ArrowRight"] || keys["d"]) player.dx = 4;
-  else player.dx = 0;
-
+  /* Player physics */
   player.dy += gravity;
-  player.x += player.dx;
   player.y += player.dy;
 
-  // Wall bounds
-  if (player.x < 0) player.x = 0;
-  if (player.x + player.width > GAME_WIDTH)
-    player.x = GAME_WIDTH - player.width;
+  /* Platform movement */
+  platforms.forEach((p) => {
+    p.x += platformSpeed * p.dir;
+    if (p.x <= 0 || p.x + p.width >= canvas.width) {
+      p.dir *= -1;
+    }
+  });
 
-  // Platform collision
+  /* Collision */
   platforms.forEach((p) => {
     if (
       player.dy > 0 &&
@@ -81,34 +78,24 @@ function update() {
       player.y + player.height >= p.y &&
       player.y + player.height <= p.y + p.height + 8
     ) {
-      player.dy = jumpForce;
+      player.dy = 0;
+      player.y = p.y - player.height;
+      player.jumping = false;
     }
   });
 
-  // Scroll world upward
-  if (player.y < canvas.height / 2) {
-    const offset = canvas.height / 2 - player.y;
-    player.y = canvas.height / 2;
-
-    platforms.forEach((p) => {
-      p.y += offset;
-      if (p.y > canvas.height) {
-        p.y = -10;
-        p.x = Math.random() * (GAME_WIDTH - 80);
-      }
-    });
-  }
-
-  // Death (NO instant restart)
+  /* Death */
   if (player.y > canvas.height + 50) {
-    createPlatforms();
+    initPlatforms();
   }
 
-  // Draw platforms
+  /* Draw platforms */
   ctx.fillStyle = "#555";
-  platforms.forEach((p) => ctx.fillRect(p.x, p.y, p.width, p.height));
+  platforms.forEach((p) => {
+    ctx.fillRect(p.x, p.y, p.width, p.height);
+  });
 
-  // Draw player
+  /* Draw player */
   ctx.fillStyle = "#d4af37";
   ctx.fillRect(player.x, player.y, player.width, player.height);
 
