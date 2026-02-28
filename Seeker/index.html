@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>73RRA – SIGNAL_SEEKER: GRID_STABILITY</title>
+    <title>73RRA – SIGNAL_SEEKER: ENHANCED_LOGS</title>
     <style>
       body {
         margin: 0;
@@ -13,37 +13,78 @@
         height: 100vh;
         overflow: hidden;
       }
+
+      /* ENHANCED SIDEBAR */
       #sidebar {
-        width: 320px;
-        border-left: 1px solid #1a1a1a;
-        background: rgba(0, 5, 5, 0.95);
+        width: 380px; /* Wider for readability */
+        border-left: 2px solid #1a3a3a;
+        background: #000;
         display: flex;
         flex-direction: column;
-        padding: 20px;
-        box-shadow: -10px 0 20px rgba(0, 0, 0, 0.5);
+        padding: 0;
+        box-shadow: -15px 0 30px rgba(0, 0, 0, 0.8);
         z-index: 10;
       }
       #log-header {
-        font-size: 12px;
-        color: #fff;
-        margin-bottom: 15px;
-        border-bottom: 1px solid #333;
-        padding-bottom: 5px;
+        font-size: 14px;
+        font-weight: bold;
+        color: #00ffcc;
+        padding: 20px;
+        border-bottom: 1px solid #1a3a3a;
+        background: rgba(0, 255, 204, 0.05);
+        letter-spacing: 3px;
       }
       #log-content {
         flex-grow: 1;
         overflow-y: auto;
-        font-size: 11px;
-        color: #666;
-        line-height: 1.6;
+        padding: 20px;
+        font-size: 14px;
+        color: #fff;
+        line-height: 1.5;
+        scrollbar-width: thin;
+        scrollbar-color: #1a3a3a #000;
       }
-      #log-content span {
+      /* New Entry Animation */
+      .log-entry {
         display: block;
-        margin-bottom: 12px;
-        border-left: 2px solid #00ffcc;
-        padding-left: 10px;
-        color: #aaa;
+        margin-bottom: 20px;
+        padding: 12px;
+        border-left: 3px solid #00ffcc;
+        background: rgba(255, 255, 255, 0.03);
+        animation: slideIn 0.4s ease-out, glowPulse 2s infinite;
       }
+      .log-tag {
+        color: #00ffcc;
+        font-size: 10px;
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(30px);
+          filter: brightness(3);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+          filter: brightness(1);
+        }
+      }
+      @keyframes glowPulse {
+        0% {
+          border-left-color: #00ffcc;
+        }
+        50% {
+          border-left-color: #ffffff;
+        }
+        100% {
+          border-left-color: #00ffcc;
+        }
+      }
+
       #game-container {
         position: relative;
         flex-grow: 1;
@@ -136,24 +177,31 @@
     </div>
 
     <div id="sidebar">
-      <div id="log-header">SECTOR_DATA.vrc</div>
-      <div id="log-content"></div>
+      <div id="log-header">DECIPHERED_ARCHIVE.db</div>
+      <div id="log-content">
+        <div style="color: #444; font-size: 12px; font-style: italic">
+          > Waiting for signal acquisition...
+        </div>
+      </div>
     </div>
 
     <script>
       const memoryLogs = [
-        "Atmospheric scrubbers still spinning.",
-        "Found a child's toy made of lead.",
-        "Satellite relay: 'Awaiting Response'.",
-        "Automated highway lights flickering.",
-        "A server room filled with frozen water.",
-        "Old billboard: 'THE FUTURE IS BRIGHT'.",
+        "Atmospheric scrubbers are still spinning, filtering air for lungs that no longer breathe.",
+        "Found a child's toy made of lead and logic. It still chirps when shaken.",
+        "Satellite relay 09: 'Awaiting Response' has been the status for 42,000 days.",
+        "Automated highway lights are flickering in a rhythmic Morse code, warning of a traffic jam from a century ago.",
+        "A server room in Sector 7 is completely filled with frozen water. The data is literally on ice.",
+        "A rusted billboard still reads: 'THE FUTURE IS BRIGHT'. The lights behind it burned out in 2104.",
+        "Old medical logs show the last human in this sector died holding a transistor radio.",
+        "Maintenance drones are still painting the same bridge over and over. The steel is now 5 inches thicker.",
+        "The city's central clock is perfectly on time. There is just no one left to check it.",
       ];
       let unusedLogs = [...memoryLogs];
 
       const canvas = document.getElementById("radarCanvas");
       const ctx = canvas.getContext("2d");
-      canvas.width = window.innerWidth - 320;
+      canvas.width = window.innerWidth - 380;
       canvas.height = window.innerHeight;
 
       const WORLD_SIZE = 2500;
@@ -176,19 +224,17 @@
 
       function initMap() {
         buildings = [];
-        // Grid-based generation ensures accessibility
         for (let gx = 0; gx < GRID_CELLS; gx++) {
           for (let gy = 0; gy < GRID_CELLS; gy++) {
-            // Leave the player's starting grid empty
             let centerX = gx * CELL_SIZE + CELL_SIZE / 2;
             let centerY = gy * CELL_SIZE + CELL_SIZE / 2;
             let distToStart = Math.sqrt(
               (centerX - 1250) ** 2 + (centerY - 1250) ** 2
             );
 
-            if (distToStart > 300 && Math.random() > 0.3) {
-              let w = Math.random() * (CELL_SIZE * 0.6) + 50;
-              let h = Math.random() * (CELL_SIZE * 0.6) + 50;
+            if (distToStart > 400 && Math.random() > 0.3) {
+              let w = Math.random() * (CELL_SIZE * 0.6) + 60;
+              let h = Math.random() * (CELL_SIZE * 0.6) + 60;
               buildings.push({
                 x: gx * CELL_SIZE + (CELL_SIZE - w) / 2,
                 y: gy * CELL_SIZE + (CELL_SIZE - h) / 2,
@@ -204,8 +250,8 @@
           seekers.push({
             x: Math.random() * WORLD_SIZE,
             y: Math.random() * WORLD_SIZE,
-            vx: (Math.random() - 0.5) * 2,
-            vy: (Math.random() - 0.5) * 2,
+            vx: (Math.random() - 0.5) * 3,
+            vy: (Math.random() - 0.5) * 3,
             range: 140,
             patrolType: Math.random() > 0.5 ? "circle" : "roam",
             angle: Math.random() * Math.PI * 2,
@@ -226,10 +272,10 @@
           return true;
         return buildings.some(
           (b) =>
-            px > b.x - 5 &&
-            px < b.x + b.w + 5 &&
-            py > b.y - 5 &&
-            py < b.y + b.h + 5
+            px > b.x - 2 &&
+            px < b.x + b.w + 2 &&
+            py > b.y - 2 &&
+            py < b.y + b.h + 2
         );
       }
 
@@ -260,31 +306,30 @@
 
         seekers.forEach((s) => {
           let dist = Math.sqrt((player.x - s.x) ** 2 + (player.y - s.y) ** 2);
+          let nextVX = s.vx,
+            nextVY = s.vy;
+
           if (dist < s.range) {
-            hp -= 0.083; // 5 dmg per second
-            s.x += (player.x - s.x) * 0.015;
-            s.y += (player.y - s.y) * 0.015;
-          } else {
-            if (s.patrolType === "roam") {
-              if (checkCollision(s.x + s.vx * 10, s.y + s.vy * 10)) {
-                s.vx *= -1;
-                s.vy *= -1;
-              }
-              s.x += s.vx;
-              s.y += s.vy;
-            } else {
-              s.angle += 0.02;
-              s.x += Math.cos(s.angle) * 2;
-              s.y += Math.sin(s.angle) * 2;
-            }
+            hp -= 0.083; // 5 dmg/sec
+            nextVX = (player.x - s.x) * 0.02;
+            nextVY = (player.y - s.y) * 0.02;
+          } else if (s.patrolType === "circle") {
+            s.angle += 0.02;
+            nextVX = Math.cos(s.angle) * 3;
+            nextVY = Math.sin(s.angle) * 3;
           }
+
+          if (!checkCollision(s.x + nextVX, s.y)) s.x += nextVX;
+          else s.vx *= -1;
+          if (!checkCollision(s.x, s.y + nextVY)) s.y += nextVY;
+          else s.vy *= -1;
         });
 
         let distNode = Math.sqrt(
           (player.x - signal.x) ** 2 + (player.y - signal.y) ** 2
         );
 
-        // Audio Guidance
+        // Guided Audio
         if (audioCtx && audioCtx.currentTime > nextPingTime) {
           let prox = Math.max(0, 1 - distNode / 1800);
           let osc = audioCtx.createOscillator();
@@ -337,9 +382,14 @@
           Math.floor(Math.random() * unusedLogs.length),
           1
         )[0];
-        const span = document.createElement("span");
-        span.innerText = `[SEC_${sector}] >> ${msg}`;
-        document.getElementById("log-content").prepend(span);
+
+        const content = document.getElementById("log-content");
+        if (score === 1) content.innerHTML = ""; // Clear the "waiting" text on first node
+
+        const div = document.createElement("div");
+        div.className = "log-entry";
+        div.innerHTML = `<span class="log-tag">[NEW_DECRYPT: SEC_${sector}]</span>${msg}`;
+        content.prepend(div);
       }
 
       function draw() {
@@ -350,39 +400,26 @@
 
         ctx.save();
         ctx.translate(-camX, -camY);
-
-        // Boundary
-        ctx.strokeStyle = "#111";
-        ctx.strokeRect(0, 0, WORLD_SIZE, WORLD_SIZE);
-
-        // Buildings (Grid-Safe)
         ctx.strokeStyle = "#1a3a3a";
         buildings.forEach((b) => ctx.strokeRect(b.x, b.y, b.w, b.h));
-
-        // Node
         ctx.strokeStyle = `rgba(255,255,255, ${
           0.5 + Math.sin(Date.now() / 150) * 0.5
         })`;
         ctx.beginPath();
         ctx.arc(signal.x, signal.y, 20, 0, 7);
         ctx.stroke();
-
-        // Seekers
         seekers.forEach((s) => {
           ctx.fillStyle = "#ff004c";
           ctx.beginPath();
           ctx.arc(s.x, s.y, 5, 0, 7);
           ctx.fill();
-          ctx.strokeStyle = "rgba(255,0,76,0.1)";
+          ctx.strokeStyle = "rgba(255,0,76,0.15)";
           ctx.beginPath();
           ctx.arc(s.x, s.y, s.range, 0, 7);
           ctx.stroke();
         });
-
-        // Player Bot
         ctx.strokeStyle = "#00ffcc";
         ctx.strokeRect(player.x - 12, player.y - 12, 24, 24);
-
         ctx.restore();
         update();
         requestAnimationFrame(draw);
