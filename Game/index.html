@@ -17,7 +17,6 @@
         gap: 30px;
       }
 
-      /* LEGEND PANEL */
       #legend {
         width: 220px;
         border: 1px solid #333;
@@ -48,7 +47,6 @@
         flex-shrink: 0;
       }
 
-      /* CRT CONTAINER */
       #game-container {
         position: relative;
         border: 4px solid #222;
@@ -87,7 +85,6 @@
         margin-top: 4px;
         text-shadow: 0 0 5px currentColor;
       }
-
       #comms-text {
         font-size: 0.6rem;
         color: #00ffcc;
@@ -115,8 +112,8 @@
   <body>
     <div id="legend">
       <h3 class="legend-header">INPUTS</h3>
-      <div class="legend-item"><strong>[WASD]</strong> Move / Jump</div>
-      <div class="legend-item"><strong>[ARROWS]</strong> Move / Jump</div>
+      <div class="legend-item"><strong>[WASD / ARROWS]</strong> Move</div>
+      <div class="legend-item"><strong>[SPACE / W / UP]</strong> Jump</div>
 
       <h3 class="legend-header" style="margin-top: 20px">UPGRADES</h3>
       <div class="legend-item">
@@ -125,11 +122,11 @@
       </div>
       <div class="legend-item">
         <div class="color-dot" style="background: #00ffcc"></div>
-        <div><strong>BUFFER:</strong><br />Slows all platform movement.</div>
+        <div><strong>BUFFER:</strong><br />Slows all movement.</div>
       </div>
       <div class="legend-item">
         <div class="color-dot" style="background: #ff004c"></div>
-        <div><strong>LATTICE:</strong><br />Center-aligned jump assist.</div>
+        <div><strong>KINETIC:</strong><br />Extreme Jump Boost.</div>
       </div>
     </div>
 
@@ -202,21 +199,18 @@
         keys = {},
         isGameOver = false;
       let slowMoTimer = 0,
-        magnetTimer = 0,
-        lastMilestone = 0;
-      let spawnCount = 0; // Tracking for guaranteed spawn
-
-      const PLATFORM_COUNT = 9; // Thinned out for better control
+        boostTimer = 0,
+        spawnCount = 0;
+      const PLAT_INTERVAL = 85; // Fixed vertical interval to prevent gaps
 
       function init() {
         score = 0;
         scoreEl.innerText = 0;
-        lastMilestone = 0;
         isGameOver = false;
         spawnCount = 0;
         gameOverScreen.style.display = "none";
         slowMoTimer = 0;
-        magnetTimer = 0;
+        boostTimer = 0;
         commsEl.innerText = "LINK_ESTABLISHED...";
         player = {
           x: 185,
@@ -232,30 +226,38 @@
         powerUps = [];
 
         // Ground platform
-        platforms.push({ x: 0, y: 580, w: 400, h: 20, dir: 0, speed: 0 });
+        platforms.push({
+          x: 0,
+          y: 580,
+          w: 400,
+          h: 20,
+          dir: 0,
+          speed: 0,
+          type: "static",
+        });
 
-        for (let i = 1; i < PLATFORM_COUNT; i++) {
-          spawnPlatform(canvas.height - i * 100);
+        for (let i = 1; i < 10; i++) {
+          spawnPlatform(canvas.height - i * PLAT_INTERVAL);
         }
       }
 
       function spawnPlatform(y) {
+        const isStatic = Math.random() < 0.3; // 30% Stationary
         const plat = {
           x: Math.random() * 300,
           y: y,
-          w: 85,
+          w: isStatic ? 70 : 85,
           h: 18,
           dir: Math.random() < 0.5 ? -1 : 1,
-          speed: 1.0 + Math.random() * 0.8,
+          speed: isStatic ? 0 : 0.8 + Math.random() * 1.2,
+          type: isStatic ? "static" : "moving",
         };
         platforms.push(plat);
 
         spawnCount++;
-        // Guaranteed every 5 platforms, otherwise 20% chance
-        if (spawnCount >= 5 || Math.random() < 0.2) {
-          const types = ["shield", "slowmo", "magnet"];
+        if (spawnCount >= 5 || Math.random() < 0.15) {
           powerUps.push({
-            type: types[Math.floor(Math.random() * types.length)],
+            type: ["shield", "slowmo", "boost"][Math.floor(Math.random() * 3)],
             parent: plat,
           });
           spawnCount = 0;
@@ -269,9 +271,10 @@
         }
         keys[e.code] = true;
         if (["Space", "KeyW", "ArrowUp"].includes(e.code) && player.onGround) {
-          player.dy = -11.5;
+          let jumpPower = boostTimer > 0 ? -18 : -11.5;
+          player.dy = jumpPower;
           player.onGround = false;
-          sfx(450, "square", 0.1);
+          sfx(boostTimer > 0 ? 800 : 450, "square", 0.15);
         }
       });
       window.addEventListener("keyup", (e) => (keys[e.code] = false));
@@ -279,44 +282,28 @@
       function update() {
         if (isGameOver) return;
 
-        if (keys["ArrowLeft"] || keys["KeyA"]) player.vx = -4.5;
-        else if (keys["ArrowRight"] || keys["KeyD"]) player.vx = 4.5;
-        else player.vx = 0;
-
-        // Smart Lattice Logic
-        if (magnetTimer > 0) {
-          magnetTimer--;
-          // Find the single closest platform ABOVE the player
-          let targetPlat = null;
-          let minDist = 150;
-
-          platforms.forEach((p) => {
-            const distY = player.y - p.y;
-            if (distY > 0 && distY < minDist) {
-              targetPlat = p;
-              minDist = distY;
-            }
-          });
-
-          if (targetPlat && player.dy > -2) {
-            // Only pull when falling or near peak of jump
-            let targetX = targetPlat.x + targetPlat.w / 2 - player.w / 2;
-            player.x += (targetX - player.x) * 0.08; // Dampened pull
-          }
-        }
-
+        player.vx =
+          keys["ArrowLeft"] || keys["KeyA"]
+            ? -5
+            : keys["ArrowRight"] || keys["KeyD"]
+            ? 5
+            : 0;
         player.x += player.vx;
+
         if (!player.onGround) {
           player.dy += 0.45;
           player.y += player.dy;
         }
         player.onGround = false;
 
-        let timeScale = slowMoTimer-- > 0 ? 0.35 : 1.0;
+        let timeScale = slowMoTimer-- > 0 ? 0.4 : 1.0;
+        if (boostTimer > 0) boostTimer--;
 
         platforms.forEach((p, index) => {
-          p.x += p.dir * p.speed * timeScale;
-          if (p.x <= 0 || p.x + p.w >= canvas.width) p.dir *= -1;
+          if (p.type === "moving") {
+            p.x += p.dir * p.speed * timeScale;
+            if (p.x <= 0 || p.x + p.w >= canvas.width) p.dir *= -1;
+          }
 
           if (
             player.dy >= 0 &&
@@ -328,18 +315,24 @@
             player.y = p.y - player.h;
             player.dy = 0;
             player.onGround = true;
-            player.x += p.dir * p.speed * timeScale;
+            if (p.type === "moving") player.x += p.dir * p.speed * timeScale;
           }
 
           if (p.y > canvas.height + 20 && index !== 0) {
-            p.y -= 900;
+            // Re-stack at the top of the existing platform group
+            let highestY = Math.min(...platforms.map((p) => p.y));
+            p.y = highestY - PLAT_INTERVAL;
             p.x = Math.random() * (canvas.width - p.w);
-            powerUps = powerUps.filter((pu) => pu.parent !== p);
 
+            const isStatic = Math.random() < 0.3;
+            p.type = isStatic ? "static" : "moving";
+            p.speed = isStatic ? 0 : 0.8 + Math.random() * 1.2;
+
+            powerUps = powerUps.filter((pu) => pu.parent !== p);
             spawnCount++;
-            if (spawnCount >= 5 || Math.random() < 0.2) {
+            if (spawnCount >= 5) {
               powerUps.push({
-                type: ["shield", "slowmo", "magnet"][
+                type: ["shield", "slowmo", "boost"][
                   Math.floor(Math.random() * 3)
                 ],
                 parent: p,
@@ -360,8 +353,12 @@
           ) {
             sfx(700, "sine", 0.15);
             if (pu.type === "shield") player.shielded = true;
-            if (pu.type === "slowmo") slowMoTimer = 500;
-            if (pu.type === "magnet") magnetTimer = 500;
+            if (pu.type === "slowmo") slowMoTimer = 400;
+            if (pu.type === "boost") {
+              boostTimer = 400;
+              player.dy = -18;
+              player.onGround = false;
+            }
             powerUps.splice(i, 1);
           }
         });
@@ -379,7 +376,7 @@
 
         if (player.y > canvas.height + 50) {
           if (player.shielded) {
-            player.dy = -17;
+            player.dy = -20;
             player.shielded = false;
             sfx(600, "triangle", 0.2);
           } else die();
@@ -393,35 +390,36 @@
         gameOverScreen.style.display = "flex";
         document.getElementById("final-score").innerText =
           "FINAL_ALTITUDE: " + Math.floor(score / 10) + "m";
-        if (Math.floor(score / 10) > highScore) {
-          highScore = Math.floor(score / 10);
-          localStorage.setItem("cognis_highscore", highScore);
-          highEl.innerText = highScore;
-        }
       }
 
       function updateUI() {
         let buffs = [];
         if (player.shielded)
           buffs.push(
-            "<div class='active-buff' style='color:#d4af37'>[AEGIS_ENABLED]</div>"
+            "<div class='active-buff' style='color:#d4af37'>[AEGIS_ACTIVE]</div>"
           );
         if (slowMoTimer > 0)
           buffs.push(
             "<div class='active-buff' style='color:#00ffcc'>[BUFFER_ACTIVE]</div>"
           );
-        if (magnetTimer > 0)
+        if (boostTimer > 0)
           buffs.push(
-            "<div class='active-buff' style='color:#ff004c'>[LATTICE_LINK]</div>"
+            "<div class='active-buff' style='color:#ff004c'>[KINETIC_OVERDRIVE]</div>"
           );
         activeList.innerHTML = buffs.length ? buffs.join("") : "NOMINAL";
       }
 
       function draw() {
         ctx.clearRect(0, 0, 400, 600);
-        platforms.forEach((p) =>
-          ctx.drawImage(platformSprite, p.x, p.y, p.w, p.h)
-        );
+        platforms.forEach((p) => {
+          // Draw static platforms with a different visual (slight glow)
+          if (p.type === "static") {
+            ctx.fillStyle = "#111";
+            ctx.fillRect(p.x - 2, p.y - 2, p.w + 4, p.h + 4);
+          }
+          ctx.drawImage(platformSprite, p.x, p.y, p.w, p.h);
+        });
+
         powerUps.forEach((pu) => {
           let px = pu.parent.x + pu.parent.w / 2 - 8;
           let py = pu.parent.y - 25;
@@ -431,11 +429,12 @@
               : pu.type === "slowmo"
               ? "#00ffcc"
               : "#ff004c";
-          ctx.shadowBlur = 10;
+          ctx.shadowBlur = 15;
           ctx.shadowColor = ctx.fillStyle;
           ctx.fillRect(px, py, 16, 16);
           ctx.shadowBlur = 0;
         });
+
         if (player.shielded) {
           ctx.strokeStyle = "#d4af37";
           ctx.setLineDash([4, 2]);
@@ -444,6 +443,13 @@
           ctx.stroke();
           ctx.setLineDash([]);
         }
+
+        // Boost trail effect
+        if (boostTimer > 0) {
+          ctx.fillStyle = "rgba(255, 0, 76, 0.3)";
+          ctx.fillRect(player.x, player.y + player.h, player.w, 15);
+        }
+
         ctx.drawImage(playerSprite, player.x, player.y, player.w, player.h);
       }
 
@@ -452,7 +458,6 @@
         draw();
         requestAnimationFrame(loop);
       }
-
       let loadCount = 0;
       const start = () => {
         if (++loadCount === 2) {
