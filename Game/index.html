@@ -14,151 +14,141 @@
         align-items: center;
         height: 100vh;
         overflow: hidden;
-        gap: 20px;
+        gap: 30px;
       }
 
       /* LEGEND PANEL */
       #legend {
-        width: 200px;
+        width: 220px;
         border: 1px solid #333;
         padding: 20px;
-        background: rgba(10, 10, 10, 0.9);
+        background: rgba(10, 10, 10, 0.95);
         font-size: 0.8rem;
-        line-height: 1.4;
+        box-shadow: -5px 0 15px rgba(212, 175, 55, 0.1);
       }
 
+      .legend-header {
+        color: #fff;
+        margin: 0 0 10px 0;
+        border-bottom: 1px solid #333;
+        padding-bottom: 5px;
+        letter-spacing: 2px;
+      }
       .legend-item {
         margin-bottom: 15px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
       }
       .color-dot {
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        margin-right: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+        margin-top: 3px;
+        flex-shrink: 0;
       }
 
       /* CRT CONTAINER */
       #game-container {
         position: relative;
-        border: 2px solid #444;
-        overflow: hidden;
+        border: 4px solid #222;
         background: #000;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 1);
-      }
-
-      #game-container::after {
-        content: " ";
-        display: block;
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
-        background: linear-gradient(
-            rgba(18, 16, 16, 0) 50%,
-            rgba(0, 0, 0, 0.2) 50%
-          ),
-          linear-gradient(
-            90deg,
-            rgba(255, 0, 0, 0.03),
-            rgba(0, 255, 0, 0.01),
-            rgba(0, 0, 255, 0.03)
-          );
-        z-index: 20;
-        background-size: 100% 4px, 3px 100%;
-        pointer-events: none;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 1);
       }
 
       #game {
         display: block;
         filter: contrast(1.1) brightness(1.1);
+        cursor: none;
       }
 
       .ui-panel {
         position: absolute;
-        top: 10px;
-        left: 10px;
+        top: 15px;
+        left: 15px;
         z-index: 30;
         pointer-events: none;
       }
 
-      /* STATUS MONITOR */
-      #status-display {
+      #status-monitor {
         position: absolute;
         bottom: 20px;
         left: 20px;
         z-index: 30;
-        background: rgba(0, 0, 0, 0.7);
-        padding: 10px;
-        border-left: 2px solid var(--gold);
+        background: rgba(0, 0, 0, 0.8);
+        padding: 12px;
+        border: 1px solid #333;
+        min-width: 140px;
       }
 
       .active-buff {
-        font-weight: bold;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-top: 5px;
-        animation: pulse 1s infinite alternate;
-      }
-
-      @keyframes pulse {
-        from {
-          opacity: 0.4;
-        }
-        to {
-          opacity: 1;
-        }
-      }
-
-      .archive-btn {
-        position: absolute;
-        bottom: 20px;
-        right: -150px; /* Offset from center body */
-        padding: 10px;
-        color: #d4af37;
-        border: 1px solid #d4af37;
-        text-decoration: none;
         font-size: 0.7rem;
+        font-weight: bold;
+        margin-top: 4px;
+        text-shadow: 0 0 5px currentColor;
+      }
+
+      #game-over {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
       }
     </style>
   </head>
   <body>
     <div id="legend">
-      <h3 style="color: #fff; margin-top: 0">SYSTEM LOG</h3>
+      <h3 class="legend-header">INPUTS</h3>
+      <div class="legend-item"><strong>[WASD]</strong> Move / Jump</div>
+      <div class="legend-item"><strong>[ARROWS]</strong> Move / Jump</div>
+
+      <h3 class="legend-header" style="margin-top: 20px">UPGRADES</h3>
       <div class="legend-item">
-        <strong>CONTROLS:</strong><br />
-        WASD or ARROWS<br />
-        SPACE to Jump
-      </div>
-      <hr style="border: 0; border-top: 1px solid #333" />
-      <div class="legend-item">
-        <span class="color-dot" style="background: #d4af37"></span>
-        <strong>AEGIS:</strong><br />Survival Shield.
+        <div class="color-dot" style="background: #d4af37"></div>
+        <div><strong>AEGIS:</strong><br />Bounces you back up if you fall.</div>
       </div>
       <div class="legend-item">
-        <span class="color-dot" style="background: #00ffcc"></span>
-        <strong>BUFFER:</strong><br />Slows Time.
+        <div class="color-dot" style="background: #00ffcc"></div>
+        <div>
+          <strong>BUFFER:</strong><br />Slows platform speed significantly.
+        </div>
       </div>
       <div class="legend-item">
-        <span class="color-dot" style="background: #ff004c"></span>
-        <strong>LATTICE:</strong><br />Magnet Pull.
+        <div class="color-dot" style="background: #ff004c"></div>
+        <div>
+          <strong>LATTICE:</strong><br />Attracts you to safe platforms.
+        </div>
       </div>
     </div>
 
     <div id="game-container">
       <div class="ui-panel">
-        <div style="font-size: 1.2rem">
-          ASCENSION: <span id="currentScore">0</span>m
+        <div style="font-size: 1.4rem; color: #fff">
+          ALTITUDE: <span id="currentScore">0</span>m
         </div>
-        <div style="opacity: 0.6; font-size: 0.7rem">
-          RECORD: <span id="highScore">0</span>m
+        <div style="opacity: 0.6; font-size: 0.8rem">
+          MAX_PEAK: <span id="highScore">0</span>m
         </div>
       </div>
 
-      <div id="status-display">
-        <div style="font-size: 0.6rem; opacity: 0.5">OVERCLOCK STATUS:</div>
-        <div id="active-list">NOMINAL</div>
+      <div id="status-monitor">
+        <div style="font-size: 0.6rem; color: #666; margin-bottom: 5px">
+          SYSTEM_OVERCLOCK:
+        </div>
+        <div id="active-list">STABLE</div>
+      </div>
+
+      <div id="game-over">
+        <h1 style="color: #ff004c">SYSTEM_CRASH</h1>
+        <p id="final-score"></p>
+        <p style="font-size: 0.8rem; color: #666">PRESS ANY KEY TO REBOOT</p>
       </div>
 
       <canvas id="game"></canvas>
@@ -170,139 +160,140 @@
       const scoreEl = document.getElementById("currentScore");
       const highEl = document.getElementById("highScore");
       const activeList = document.getElementById("active-list");
+      const gameOverScreen = document.getElementById("game-over");
 
       canvas.width = 400;
       canvas.height = 600;
 
-      // Sound System
+      // Audio Engine
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      function playTone(freq, type, duration, vol = 0.1) {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(
-          0.01,
-          audioCtx.currentTime + duration
-        );
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + duration);
+      function sfx(f, t, d, v = 0.1) {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = t;
+        o.frequency.setValueAtTime(f, audioCtx.currentTime);
+        g.gain.setValueAtTime(v, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d);
+        o.connect(g);
+        g.connect(audioCtx.destination);
+        o.start();
+        o.stop(audioCtx.currentTime + d);
       }
-
-      const sounds = {
-        jump: () => playTone(400, "square", 0.1),
-        pickup: () => {
-          playTone(600, "sine", 0.1);
-          setTimeout(() => playTone(900, "sine", 0.1), 50);
-        },
-        death: () => {
-          playTone(200, "sawtooth", 0.3);
-          playTone(100, "sawtooth", 0.5);
-        },
-      };
 
       const playerSprite = new Image();
       playerSprite.src = "jumpyboy.png";
       const platformSprite = new Image();
       platformSprite.src = "platformyboy.png";
 
-      let score = 0;
-      let highScore = localStorage.getItem("cognis_highscore") || 0;
+      let score = 0,
+        highScore = localStorage.getItem("cognis_highscore") || 0;
       highEl.innerText = highScore;
 
-      let player = {
-        x: 190,
-        y: 500,
-        w: 24,
-        h: 24,
-        dy: 0,
-        vx: 0,
-        onGround: false,
-        shielded: false,
-      };
-      let platforms = [],
-        powerUps = [],
-        keys = {};
+      let player,
+        platforms,
+        powerUps,
+        keys = {},
+        isGameOver = false;
       let slowMoTimer = 0,
         magnetTimer = 0;
 
       function init() {
         score = 0;
-        scoreEl.innerText = score;
-        platforms = [];
-        powerUps = [];
+        scoreEl.innerText = 0;
+        isGameOver = false;
+        gameOverScreen.style.display = "none";
         slowMoTimer = 0;
         magnetTimer = 0;
-        player.shielded = false;
-        platforms.push({ x: 0, y: 580, w: 400, h: 20, dir: 0 });
-        for (let i = 1; i < 8; i++) spawnPlatform(canvas.height - i * 100);
+        player = {
+          x: 185,
+          y: 500,
+          w: 30,
+          h: 30,
+          dy: 0,
+          vx: 0,
+          onGround: false,
+          shielded: false,
+        };
+        platforms = [];
+        powerUps = [];
+
+        // Fixed base platform
+        platforms.push({ x: 0, y: 580, w: 400, h: 20, dir: 0, speedMult: 0 });
+
+        // Build initial climb
+        for (let i = 1; i < 8; i++) {
+          spawnPlatform(canvas.height - i * 110);
+        }
       }
 
       function spawnPlatform(y) {
         const plat = {
-          x: Math.random() * 330,
+          x: Math.random() * 300,
           y: y,
-          w: 70,
-          h: 15,
+          w: 80,
+          h: 18,
           dir: Math.random() < 0.5 ? -1 : 1,
+          speed: 1.2 + Math.random() * 0.8,
         };
         platforms.push(plat);
-        if (Math.random() < 0.35) {
-          // INCREASED PROBABILITY
+
+        if (Math.random() < 0.5) {
+          // 50% SPAWN RATE
           const types = ["shield", "slowmo", "magnet"];
           powerUps.push({
-            x: plat.x + 25,
-            y: plat.y - 25,
-            w: 16,
-            h: 16,
             type: types[Math.floor(Math.random() * types.length)],
-            parentPlat: plat,
+            parent: plat,
+            offset: 30, // Horizontal offset from platform center
           });
         }
       }
 
       window.addEventListener("keydown", (e) => {
+        if (isGameOver) {
+          init();
+          return;
+        }
         keys[e.code] = true;
-        if (
-          (e.code === "Space" || e.code === "KeyW" || e.code === "ArrowUp") &&
-          player.onGround
-        ) {
-          player.dy = -10;
+        if (["Space", "KeyW", "ArrowUp"].includes(e.code) && player.onGround) {
+          player.dy = -11;
           player.onGround = false;
-          sounds.jump();
+          sfx(450, "square", 0.1);
         }
       });
       window.addEventListener("keyup", (e) => (keys[e.code] = false));
 
       function update() {
-        if (keys["ArrowLeft"] || keys["KeyA"]) player.vx = -4;
-        else if (keys["ArrowRight"] || keys["KeyD"]) player.vx = 4;
+        if (isGameOver) return;
+
+        // Movement
+        if (keys["ArrowLeft"] || keys["KeyA"]) player.vx = -4.5;
+        else if (keys["ArrowRight"] || keys["KeyD"]) player.vx = 4.5;
         else player.vx = 0;
 
+        // Lattice Logic
         if (magnetTimer > 0) {
           magnetTimer--;
           platforms.forEach((p) => {
-            if (Math.abs(player.y - p.y) < 70 && player.dy > 0) {
-              player.x += (p.x + p.w / 2 - player.w / 2 - player.x) * 0.1;
+            if (Math.abs(player.y - p.y) < 80 && player.dy > 0) {
+              player.x += (p.x + p.w / 2 - player.w / 2 - player.x) * 0.12;
             }
           });
         }
 
         player.x += player.vx;
         if (!player.onGround) {
-          player.dy += 0.4;
+          player.dy += 0.45;
           player.y += player.dy;
         }
         player.onGround = false;
 
-        let speed = slowMoTimer-- > 0 ? 0.6 : 1.5;
+        let timeScale = slowMoTimer-- > 0 ? 0.4 : 1.0;
 
         platforms.forEach((p) => {
-          p.x += p.dir * speed;
+          p.x += p.dir * p.speed * timeScale;
           if (p.x <= 0 || p.x + p.w >= canvas.width) p.dir *= -1;
+
+          // Collision
           if (
             player.dy >= 0 &&
             player.x + player.w > p.x &&
@@ -313,31 +304,46 @@
             player.y = p.y - player.h;
             player.dy = 0;
             player.onGround = true;
-            player.x += p.dir * speed;
+            player.x += p.dir * p.speed * timeScale;
           }
+
+          // Recycle Logic (Improved Stability)
           if (p.y > canvas.height) {
-            p.y -= 800;
-            p.x = Math.random() * 330;
+            p.y -= 880; // Total vertical spread
+            p.x = Math.random() * (canvas.width - p.w);
+            // Clear old powerups for this plat
+            powerUps = powerUps.filter((pu) => pu.parent !== p);
+            // Chance for new powerup on recycle
+            if (Math.random() < 0.5) {
+              powerUps.push({
+                type: ["shield", "slowmo", "magnet"][
+                  Math.floor(Math.random() * 3)
+                ],
+                parent: p,
+                offset: 30,
+              });
+            }
           }
         });
 
         powerUps.forEach((pu, i) => {
-          pu.y = pu.parentPlat.y - 25;
-          pu.x = pu.parentPlat.x + 25;
+          let px = pu.parent.x + pu.parent.w / 2 - 8;
+          let py = pu.parent.y - 25;
           if (
-            player.x < pu.x + 16 &&
-            player.x + 24 > pu.x &&
-            player.y < pu.y + 16 &&
-            player.y + 24 > pu.y
+            player.x < px + 16 &&
+            player.x + player.w > px &&
+            player.y < py + 16 &&
+            player.y + player.h > py
           ) {
-            sounds.pickup();
+            sfx(700, "sine", 0.15);
             if (pu.type === "shield") player.shielded = true;
-            if (pu.type === "slowmo") slowMoTimer = 400;
-            if (pu.type === "magnet") magnetTimer = 400;
+            if (pu.type === "slowmo") slowMoTimer = 450;
+            if (pu.type === "magnet") magnetTimer = 450;
             powerUps.splice(i, 1);
           }
         });
 
+        // Camera Scroll
         if (player.y < 300) {
           let diff = 300 - player.y;
           player.y = 300;
@@ -346,52 +352,52 @@
           platforms.forEach((p) => (p.y += diff));
         }
 
-        if (player.x > canvas.width) player.x = -24;
-        if (player.x < -24) player.x = canvas.width;
+        // Screen Wrap
+        if (player.x > canvas.width) player.x = -player.w;
+        if (player.x < -player.w) player.x = canvas.width;
 
-        if (player.y > canvas.height + 50) {
+        // Death Handling
+        if (player.y > canvas.height + 20) {
           if (player.shielded) {
-            player.dy = -15;
+            player.dy = -16;
             player.shielded = false;
-            sounds.pickup();
+            sfx(600, "triangle", 0.2);
           } else {
-            sounds.death();
-            saveHighScore();
-            resetGame();
+            die();
           }
         }
 
-        // UI Monitor Logic
-        let active = [];
-        if (player.shielded)
-          active.push(
-            "<div class='active-buff' style='color:#d4af37'>[AEGIS_ACTIVE]</div>"
-          );
-        if (slowMoTimer > 0)
-          active.push(
-            "<div class='active-buff' style='color:#00ffcc'>[BUFFER_ACTIVE]</div>"
-          );
-        if (magnetTimer > 0)
-          active.push(
-            "<div class='active-buff' style='color:#ff004c'>[LATTICE_ACTIVE]</div>"
-          );
-        activeList.innerHTML = active.length ? active.join("") : "NOMINAL";
+        updateUI();
       }
 
-      function saveHighScore() {
-        let s = Math.floor(score / 10);
-        if (s > highScore) {
-          highScore = s;
-          localStorage.setItem("cognis_highscore", s);
-          highEl.innerText = s;
+      function die() {
+        isGameOver = true;
+        sfx(100, "sawtooth", 0.5);
+        gameOverScreen.style.display = "flex";
+        document.getElementById("final-score").innerText =
+          "FINAL_ALTITUDE: " + Math.floor(score / 10) + "m";
+        if (Math.floor(score / 10) > highScore) {
+          highScore = Math.floor(score / 10);
+          localStorage.setItem("cognis_highscore", highScore);
+          highEl.innerText = highScore;
         }
       }
 
-      function resetGame() {
-        player.x = 190;
-        player.y = 500;
-        player.dy = 0;
-        init();
+      function updateUI() {
+        let buffs = [];
+        if (player.shielded)
+          buffs.push(
+            "<div class='active-buff' style='color:#d4af37'>[AEGIS_ENABLED]</div>"
+          );
+        if (slowMoTimer > 0)
+          buffs.push(
+            "<div class='active-buff' style='color:#00ffcc'>[BUFFER_ACTIVE]</div>"
+          );
+        if (magnetTimer > 0)
+          buffs.push(
+            "<div class='active-buff' style='color:#ff004c'>[LATTICE_LINK]</div>"
+          );
+        activeList.innerHTML = buffs.length ? buffs.join("") : "NOMINAL";
       }
 
       function draw() {
@@ -400,22 +406,26 @@
           ctx.drawImage(platformSprite, p.x, p.y, p.w, p.h)
         );
         powerUps.forEach((pu) => {
+          let px = pu.parent.x + pu.parent.w / 2 - 8;
+          let py = pu.parent.y - 25;
           ctx.fillStyle =
             pu.type === "shield"
               ? "#d4af37"
               : pu.type === "slowmo"
               ? "#00ffcc"
               : "#ff004c";
-          ctx.beginPath();
-          ctx.arc(pu.x + 8, pu.y + 8, 8, 0, 7);
-          ctx.fill();
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = ctx.fillStyle;
+          ctx.fillRect(px, py, 16, 16);
+          ctx.shadowBlur = 0;
         });
         if (player.shielded) {
           ctx.strokeStyle = "#d4af37";
-          ctx.lineWidth = 2;
+          ctx.setLineDash([4, 2]);
           ctx.beginPath();
-          ctx.arc(player.x + 12, player.y + 12, 20, 0, 7);
+          ctx.arc(player.x + 15, player.y + 15, 25, 0, 7);
           ctx.stroke();
+          ctx.setLineDash([]);
         }
         ctx.drawImage(playerSprite, player.x, player.y, player.w, player.h);
       }
@@ -426,16 +436,15 @@
         requestAnimationFrame(loop);
       }
 
-      let loaded = 0;
-      [playerSprite, platformSprite].forEach(
-        (i) =>
-          (i.onload = () => {
-            if (++loaded === 2) {
-              init();
-              loop();
-            }
-          })
-      );
+      let loadCount = 0;
+      const start = () => {
+        if (++loadCount === 2) {
+          init();
+          loop();
+        }
+      };
+      playerSprite.onload = start;
+      platformSprite.onload = start;
     </script>
   </body>
 </html>
