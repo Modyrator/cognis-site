@@ -176,7 +176,6 @@
       canvas.width = 400;
       canvas.height = 600;
 
-      // Audio Engine
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       function sfx(f, t, d, v = 0.1) {
         if (audioCtx.state === "suspended") audioCtx.resume();
@@ -207,8 +206,12 @@
         keys = {},
         isGameOver = false;
       let slowMoTimer = 0,
-        magnetTimer = 0;
-      let lastMilestone = 0;
+        magnetTimer = 0,
+        lastMilestone = 0;
+
+      // SETTINGS
+      const PLATFORM_COUNT = 12; // Increased for better density
+      const RECYCLE_DISTANCE = 750; // Tighter loop to prevent empty space
 
       function init() {
         score = 0;
@@ -232,26 +235,29 @@
         platforms = [];
         powerUps = [];
 
-        // Fixed base platform (Index 0)
+        // Ground platform
         platforms.push({ x: 0, y: 580, w: 400, h: 20, dir: 0, speed: 0 });
 
-        // Build initial climb
-        for (let i = 1; i < 8; i++) {
-          spawnPlatform(canvas.height - i * 110);
+        // Build density
+        for (let i = 1; i < PLATFORM_COUNT; i++) {
+          spawnPlatform(canvas.height - i * 80); // Closer vertical spacing
         }
       }
 
       function spawnPlatform(y) {
         const plat = {
-          x: Math.random() * 300,
+          x: Math.random() * 320,
           y: y,
           w: 80,
           h: 18,
           dir: Math.random() < 0.5 ? -1 : 1,
-          speed: 1.2 + Math.random() * 0.8,
+          speed: 1.0 + Math.random() * 1.0,
         };
         platforms.push(plat);
+        trySpawnPowerUp(plat);
+      }
 
+      function trySpawnPowerUp(plat) {
         if (Math.random() < 0.5) {
           const types = ["shield", "slowmo", "magnet"];
           powerUps.push({
@@ -278,12 +284,10 @@
       function update() {
         if (isGameOver) return;
 
-        // Movement
         if (keys["ArrowLeft"] || keys["KeyA"]) player.vx = -4.5;
         else if (keys["ArrowRight"] || keys["KeyD"]) player.vx = 4.5;
         else player.vx = 0;
 
-        // Lattice Logic (Magnet)
         if (magnetTimer > 0) {
           magnetTimer--;
           platforms.forEach((p) => {
@@ -306,7 +310,6 @@
           p.x += p.dir * p.speed * timeScale;
           if (p.x <= 0 || p.x + p.w >= canvas.width) p.dir *= -1;
 
-          // Collision
           if (
             player.dy >= 0 &&
             player.x + player.w > p.x &&
@@ -320,23 +323,15 @@
             player.x += p.dir * p.speed * timeScale;
           }
 
-          // THE FIX: Do not recycle index 0 (the ground)
-          if (p.y > canvas.height && index !== 0) {
-            p.y -= 880;
+          // RECYCLE FIX: Check against canvas height + buffer
+          if (p.y > canvas.height + 20 && index !== 0) {
+            p.y -= RECYCLE_DISTANCE;
             p.x = Math.random() * (canvas.width - p.w);
             powerUps = powerUps.filter((pu) => pu.parent !== p);
-            if (Math.random() < 0.5) {
-              powerUps.push({
-                type: ["shield", "slowmo", "magnet"][
-                  Math.floor(Math.random() * 3)
-                ],
-                parent: p,
-              });
-            }
+            trySpawnPowerUp(p);
           }
         });
 
-        // Power-up Collision
         powerUps.forEach((pu, i) => {
           let px = pu.parent.x + pu.parent.w / 2 - 8;
           let py = pu.parent.y - 25;
@@ -354,7 +349,6 @@
           }
         });
 
-        // Camera Scroll
         if (player.y < 300) {
           let diff = 300 - player.y;
           player.y = 300;
@@ -363,34 +357,29 @@
           platforms.forEach((p) => (p.y += diff));
         }
 
-        // Milestone Comms
-        let currentAltitude = Math.floor(score / 10);
-        if (currentAltitude >= 100 && lastMilestone < 100) {
+        // Narrative milestones
+        let currentAlt = Math.floor(score / 10);
+        if (currentAlt >= 100 && lastMilestone < 100) {
           commsEl.innerText = "[COMMS] DATA: FAYDRIC'S TOUCH REMAINS.";
           lastMilestone = 100;
-        } else if (currentAltitude >= 300 && lastMilestone < 300) {
+        } else if (currentAlt >= 300 && lastMilestone < 300) {
           commsEl.innerText = "[COMMS] WARN: ATMOSPHERIC THINNING.";
           lastMilestone = 300;
-        } else if (currentAltitude >= 600 && lastMilestone < 600) {
+        } else if (currentAlt >= 600 && lastMilestone < 600) {
           commsEl.innerText = "[COMMS] MEMORY: THE CORE IS STEADY.";
           lastMilestone = 600;
         }
 
-        // Screen Wrap
         if (player.x > canvas.width) player.x = -player.w;
         if (player.x < -player.w) player.x = canvas.width;
 
-        // Death Handling
-        if (player.y > canvas.height + 20) {
+        if (player.y > canvas.height + 50) {
           if (player.shielded) {
             player.dy = -16;
             player.shielded = false;
             sfx(600, "triangle", 0.2);
-          } else {
-            die();
-          }
+          } else die();
         }
-
         updateUI();
       }
 
