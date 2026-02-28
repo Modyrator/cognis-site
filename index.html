@@ -1,117 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Google tag (gtag.js) -->
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-QDCFB8HETF"
-    ></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag("js", new Date());
-      gtag("config", "G-QDCFB8HETF");
-    </script>
-
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cognis – Archive</title>
-    <link rel="stylesheet" href="styles.css" />
     <style>
-      .big-link {
-        font-size: 2rem;
-        color: #ff004c;
-        font-weight: bold;
-        text-transform: uppercase;
-        display: inline-block;
-        margin-top: 20px;
-        padding: 10px 20px;
-        border: 2px solid #ff004c;
-        border-radius: 8px;
-        text-decoration: none;
-        background: black;
-        animation: pulse 1.5s infinite alternate;
+      :root {
+        --primary: #d4af37; /* Gold */
+        --accent: #00ffcc; /* Teal */
+        --danger: #ff004c; /* Red/Pink */
+        --bg: #050505;
       }
 
-      @keyframes pulse {
-        0% {
-          box-shadow: 0 0 10px #ff004c;
-        }
-        100% {
-          box-shadow: 0 0 30px #ff004c, 0 0 60px #ff004c;
-        }
-      }
-
-      .content-container {
-        text-align: center;
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: var(--bg);
+        color: var(--primary);
         font-family: "Courier New", monospace;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        text-align: center;
+      }
+
+      .terminal-container {
+        width: 90%;
+        max-width: 600px;
+        padding: 40px;
+        border: 1px solid #222;
+        background: rgba(0, 0, 0, 0.8);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 1);
       }
 
       h1 {
-        margin-bottom: 10px;
+        font-size: 1.8rem;
+        letter-spacing: 2px;
+        margin-bottom: 5px;
+        text-transform: uppercase;
       }
 
-      a {
-        color: #00ffcc;
+      .status-text {
+        font-size: 0.8rem;
+        opacity: 0.6;
+        margin-bottom: 30px;
+      }
+
+      /* Links Styling */
+      .log-link {
+        color: var(--accent);
         text-decoration: none;
-        display: block;
-        margin: 10px 0;
+        display: inline-block;
+        margin: 12px 0;
+        transition: 0.3s;
+        font-weight: bold;
+      }
+
+      .log-link:hover {
+        color: #fff;
+        text-shadow: 0 0 8px var(--accent);
+      }
+
+      /* Input Styling */
+      .input-wrapper {
+        margin: 30px 0;
       }
 
       input {
-        margin-top: 10px;
-        padding: 8px;
-        font-size: 1rem;
+        background: #111;
+        border: 1px solid #444;
+        padding: 10px;
+        color: var(--accent);
+        font-family: inherit;
         text-align: center;
+        width: 250px;
+        outline: none;
+      }
+
+      input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 10px rgba(0, 255, 204, 0.2);
+      }
+
+      /* Special Links */
+      .big-link {
+        font-size: 1.2rem;
+        color: var(--danger);
+        font-weight: bold;
+        text-transform: uppercase;
+        display: inline-block;
+        margin: 20px 0;
+        padding: 15px 25px;
+        border: 2px solid var(--danger);
+        text-decoration: none;
+        animation: pulse 2s infinite ease-in-out;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 5px var(--danger);
+          transform: scale(1);
+        }
+        50% {
+          box-shadow: 0 0 20px var(--danger);
+          transform: scale(1.02);
+        }
+      }
+
+      hr {
+        border: 0;
+        border-top: 1px dashed #333;
+        margin: 20px 0;
+      }
+
+      .hint {
+        font-size: 0.7rem;
+        opacity: 0.5;
+        display: block;
+        margin-bottom: 5px;
       }
     </style>
   </head>
   <body>
-    <div class="content-container">
-      <h1>Cognis – Archive Log</h1>
-      <p>Memory fragments stored. Stability unknown.</p>
+    <div class="terminal-container">
+      <header>
+        <h1>Cognis – Archive Log</h1>
+        <p class="status-text">Memory fragments stored. Stability: 84%</p>
+      </header>
 
-      <!-- Public link -->
-      <p>
-        <a href="cognis-story.html"
-          >▶ Read First Entry: The Soul of Invention</a
-        >
-      </p>
+      <a href="cognis-story.html" class="log-link">
+        ▶ [READ ENTRY]: The Soul of Invention
+      </a>
 
-      <!-- Hidden phrase hint (optional) -->
-      <p>
-        <em>
-          <span class="clue" title="Three Words">
-            Access phrase required for advanced logs:
-          </span>
-        </em>
-      </p>
-      <input
-        type="text"
-        id="accessInput"
-        placeholder="Enter access phrase..."
-      />
+      <hr />
 
-      <!-- Advanced links (all now visible) -->
-      <p>
-        <a id="secretLink1" href="ModyAxiomArtifact/">
-          Access Terminal: ModyAxiomArtifact
+      <div class="input-wrapper">
+        <label class="hint">AUTHORIZED CLEARANCE REQUIRED</label>
+        <input
+          type="text"
+          id="accessInput"
+          placeholder="Enter Access Phrase..."
+        />
+      </div>
+
+      <nav>
+        <a id="secretLink1" class="log-link" href="ModyAxiomArtifact/">
+          Terminal: ModyAxiomArtifact
         </a>
-      </p>
-      <p>
-        <a id="secretLink2" href="Continuity7/">
-          Access Terminal: Continuity 7
+        <br />
+        <a id="secretLink2" class="log-link" href="Continuity7/">
+          Terminal: Continuity 7
         </a>
-      </p>
-      <p>
+        <br />
         <a id="secretLink3" class="big-link" href="FaydricTomaixPersistence/">
-          Access Terminal: 73rra Robot World
+          Terminal: 73rra Robot World
         </a>
-      </p>
-      <p>
-        <a id="secretLink4" href="Game/"> ▶ Play: Ascension Trial </a>
-      </p>
+        <br />
+        <a
+          id="secretLink4"
+          class="log-link"
+          style="color: var(--primary)"
+          href="Game/"
+        >
+          ▶ [INITIATE]: Ascension Trial
+        </a>
+      </nav>
     </div>
   </body>
 </html>
