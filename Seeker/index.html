@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>73RRA – SIGNAL_SEEKER: URBAN_RECON</title>
+    <title>73RRA – SIGNAL_SEEKER: ARCHIVE_RECOVERY</title>
     <style>
       body {
         margin: 0;
@@ -13,15 +13,15 @@
         height: 100vh;
         overflow: hidden;
       }
-      /* Sidebar for Logs */
       #sidebar {
-        width: 300px;
+        width: 320px;
         border-left: 1px solid #1a1a1a;
         background: rgba(0, 5, 5, 0.95);
         display: flex;
         flex-direction: column;
         padding: 20px;
         box-shadow: -10px 0 20px rgba(0, 0, 0, 0.5);
+        z-index: 10;
       }
       #log-header {
         font-size: 12px;
@@ -43,22 +43,29 @@
         border-left: 2px solid #00ffcc;
         padding-left: 10px;
         color: #aaa;
+        animation: scanIn 0.5s ease;
       }
-
+      @keyframes scanIn {
+        from {
+          opacity: 0;
+          transform: translateX(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
       #game-container {
         position: relative;
         flex-grow: 1;
-        display: flex;
-        justify-content: center;
-        align-items: center;
         background: #000;
+        overflow: hidden;
       }
       canvas {
-        border: 1px solid #1a1a1a;
+        display: block;
         background: #000;
         cursor: none;
       }
-
       #ui-overlay {
         position: absolute;
         top: 20px;
@@ -67,7 +74,6 @@
         text-transform: uppercase;
         font-size: 11px;
         letter-spacing: 2px;
-        text-shadow: 0 0 5px #00ffcc;
       }
       #exit-btn {
         position: absolute;
@@ -85,16 +91,14 @@
         color: #fff;
         border-color: #00ffcc;
       }
-      #terminal {
+      #minimap {
         position: absolute;
-        bottom: 20px;
-        left: 20px;
+        bottom: 80px;
         right: 20px;
-        background: rgba(0, 0, 0, 0.8);
-        border: 1px solid #1a1a1a;
-        padding: 10px;
-        font-size: 12px;
-        color: #00ffcc;
+        width: 150px;
+        height: 150px;
+        border: 1px solid #1a3a3a;
+        background: rgba(0, 20, 20, 0.2);
       }
     </style>
   </head>
@@ -107,122 +111,134 @@
       </div>
       <a href="../index.html" id="exit-btn">DISCONNECT [ESC]</a>
       <canvas id="radarCanvas"></canvas>
-      <div id="terminal">
-        > SYSTEM_READY: SEARCHING FOR RESIDUAL DATA NODES...
-      </div>
+      <canvas id="minimap"></canvas>
     </div>
 
     <div id="sidebar">
-      <div id="log-header">RECOVERED_LOGS.db</div>
-      <div id="log-content" id="log-scroll"></div>
+      <div id="log-header">MEMORY_BANK.vrc</div>
+      <div id="log-content"></div>
     </div>
 
     <script>
-      // --- EDIT YOUR LOG MESSAGES HERE ---
       const memoryLogs = [
-        "The automated sprinklers in Sector 4 are still running. They are watering plastic flowers.",
-        "A recording found in a nursery: 'Don't be afraid of the Buzz3rs, they are just birds with metal hearts.'",
-        "Factory Log: Production of 'Human Companions' reached 0. Machines continued building them for 30 years.",
-        "Archive: The last human message was a request for more light.",
-        "Found a digital photo: A group of people smiling. The metadata says 'Summer 2091'. It is the only copy left.",
-        "Sensors detected a piano playing in a ruined theater. It was just the wind hitting the strings.",
-        "A maintenance bot was found trying to repair a statue. It didn't realize stone cannot be healed.",
+        "The automated sprinklers in Sector 4 are watering plastic flowers.",
+        "A recording: 'Don't be afraid of the Buzz3rs, they are just birds with metal hearts.'",
+        "Factory Log: Production of 'Human Companions' reached 0. They kept building them for 30 years.",
+        "The last human message was a request for more light.",
+        "Digital photo: People smiling. Metadata: 'Summer 2091'. The only copy left.",
+        "A piano plays in a ruined theater. It is just the wind hitting the strings.",
+        "A maintenance bot was found trying to repair a stone statue.",
+        "Log: 'The stars look the same, but no one is naming them anymore.'",
+        "Sensor: Detected a door locked from the inside. It has been shut for 200 years.",
       ];
+      let unusedLogs = [...memoryLogs];
 
       const canvas = document.getElementById("radarCanvas");
       const ctx = canvas.getContext("2d");
+      const mCanvas = document.getElementById("minimap");
+      const mCtx = mCanvas.getContext("2d");
       const logContent = document.getElementById("log-content");
-      const scoreEl = document.getElementById("score");
-      const syncEl = document.getElementById("sync");
-      const coordsEl = document.getElementById("coords");
 
-      canvas.width = 800;
-      canvas.height = 600;
+      canvas.width = window.innerWidth - 320;
+      canvas.height = window.innerHeight;
+      mCanvas.width = 150;
+      mCanvas.height = 150;
 
       const WORLD_SIZE = 2000;
       let score = 0,
         sync = 0,
         discovered = false;
-      let camX = 0,
-        camY = 0;
-      let mouse = { x: 400, y: 300 }; // Viewport pos
-      let worldMouse = { x: 400, y: 300 }; // World pos
+      let camX = 500,
+        camY = 500;
+      let playerPos = { x: 1000, y: 1000 };
+      let signal = { x: 400, y: 400 };
+      let audioCtx = null,
+        nextPingTime = 0;
 
-      // Obstacles (Buildings)
       const buildings = [];
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < 35; i++) {
         buildings.push({
           x: Math.random() * (WORLD_SIZE - 200) + 100,
           y: Math.random() * (WORLD_SIZE - 200) + 100,
-          w: Math.random() * 100 + 50,
-          h: Math.random() * 100 + 50,
+          w: Math.random() * 120 + 60,
+          h: Math.random() * 120 + 60,
         });
       }
 
-      let signal = { x: 1000, y: 1000 };
-      let seekers = [];
-      for (let i = 0; i < 10; i++) {
-        seekers.push({
-          x: Math.random() * WORLD_SIZE,
-          y: Math.random() * WORLD_SIZE,
-          r: 15,
-          vx: Math.random() - 0.5,
-          vy: Math.random() - 0.5,
-        });
-      }
+      let seekers = Array.from({ length: 12 }, () => ({
+        x: Math.random() * WORLD_SIZE,
+        y: Math.random() * WORLD_SIZE,
+        vx: Math.random() * 2 - 1,
+        vy: Math.random() * 2 - 1,
+      }));
 
-      function isColliding(nx, ny, w, h) {
+      function checkCollision(px, py) {
         return buildings.some(
-          (b) =>
-            nx < b.x + b.w && nx + w > b.x && ny < b.y + b.h && ny + h > b.y
+          (b) => px > b.x && px < b.x + b.w && py > b.y && py < b.y + b.h
         );
       }
 
-      canvas.addEventListener("mousemove", (e) => {
-        const rect = canvas.getBoundingClientRect();
-        mouse.x = e.clientX - rect.left;
-        mouse.y = e.clientY - rect.top;
-      });
+      function initAudio() {
+        if (!audioCtx)
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
 
-      window.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") window.location.href = "../index.html";
+      function playPing(freq, vol) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        g.gain.setValueAtTime(vol * 0.1, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+      }
+
+      canvas.addEventListener("mousemove", (e) => {
+        initAudio();
+        const rect = canvas.getBoundingClientRect();
+        let targetX = e.clientX - rect.left + camX;
+        let targetY = e.clientY - rect.top + camY;
+
+        // Axis-independent collision sliding
+        if (!checkCollision(targetX, playerPos.y)) playerPos.x = targetX;
+        if (!checkCollision(playerPos.x, targetY)) playerPos.y = targetY;
       });
 
       function addLog() {
-        const msg = memoryLogs[score % memoryLogs.length];
+        if (unusedLogs.length === 0) unusedLogs = [...memoryLogs];
+        const idx = Math.floor(Math.random() * unusedLogs.length);
+        const msg = unusedLogs.splice(idx, 1)[0];
         const span = document.createElement("span");
-        span.innerText = `> ${msg}`;
+        span.innerText = `[NODE_${score}] >> ${msg}`;
         logContent.prepend(span);
       }
 
       function update() {
-        // Camera smooth follow
-        worldMouse.x += (mouse.x + camX - worldMouse.x) * 0.1;
-        worldMouse.y += (mouse.y + camY - worldMouse.y) * 0.1;
+        camX = playerPos.x - canvas.width / 2;
+        camY = playerPos.y - canvas.height / 2;
 
-        // Simple collision for player
-        if (isColliding(worldMouse.x - 5, worldMouse.y - 5, 10, 10)) {
-          // bounce back logic omitted for simplicity, but we prevent movement through walls
+        const dist = Math.sqrt(
+          (playerPos.x - signal.x) ** 2 + (playerPos.y - signal.y) ** 2
+        );
+
+        // Spatial Sound logic
+        if (audioCtx && audioCtx.currentTime > nextPingTime) {
+          const proximity = Math.max(0, 1 - dist / 1000);
+          playPing(400 + proximity * 1200, proximity);
+          nextPingTime = audioCtx.currentTime + (0.1 + dist / 1500);
         }
 
-        camX = worldMouse.x - canvas.width / 2;
-        camY = worldMouse.y - canvas.height / 2;
-
-        coordsEl.innerText = `${Math.floor(worldMouse.x)},${Math.floor(
-          worldMouse.y
-        )}`;
-
-        // Signal Logic
-        const dist = Math.sqrt(
-          (worldMouse.x - signal.x) ** 2 + (worldMouse.y - signal.y) ** 2
-        );
-        if (dist < 50 && !discovered) {
-          sync = Math.min(100, sync + 1.5); // Fast scan
+        if (dist < 40 && !discovered) {
+          sync = Math.min(100, sync + 1.2);
           if (sync >= 100) {
             score++;
-            scoreEl.innerText = score;
             addLog();
             discovered = true;
+            document.getElementById("score").innerText = score;
             setTimeout(() => {
               signal = {
                 x: Math.random() * WORLD_SIZE,
@@ -230,48 +246,53 @@
               };
               sync = 0;
               discovered = false;
-            }, 2000);
+            }, 1500);
           }
-        } else {
-          sync = Math.max(0, sync - 0.5);
+        } else if (!discovered) {
+          sync = Math.max(0, sync - 0.4);
         }
-        syncEl.innerText = Math.floor(sync);
 
-        // Seekers logic
+        document.getElementById("sync").innerText = Math.floor(sync);
+        document.getElementById("coords").innerText = `${Math.floor(
+          playerPos.x
+        )},${Math.floor(playerPos.y)}`;
+
         seekers.forEach((s) => {
-          let nextX = s.x + s.vx;
-          let nextY = s.y + s.vy;
-          if (
-            nextX < 0 ||
-            nextX > WORLD_SIZE ||
-            isColliding(nextX - 5, nextY - 5, 10, 10)
-          )
-            s.vx *= -1;
-          if (
-            nextY < 0 ||
-            nextY > WORLD_SIZE ||
-            isColliding(nextX - 5, nextY - 5, 10, 10)
-          )
-            s.vy *= -1;
+          if (checkCollision(s.x + s.vx, s.y)) s.vx *= -1;
+          if (checkCollision(s.x, s.y + s.vy)) s.vy *= -1;
           s.x += s.vx;
           s.y += s.vy;
-
-          // Detection
-          let d = Math.sqrt(
-            (worldMouse.x - s.x) ** 2 + (worldMouse.y - s.y) ** 2
-          );
-          if (d < 40) sync = Math.max(0, sync - 5);
+          if (s.x < 0 || s.x > WORLD_SIZE) s.vx *= -1;
+          if (s.y < 0 || s.y > WORLD_SIZE) s.vy *= -1;
+          if (
+            Math.sqrt((playerPos.x - s.x) ** 2 + (playerPos.y - s.y) ** 2) < 30
+          )
+            sync = Math.max(0, sync - 3);
         });
+      }
+
+      function drawMinimap() {
+        mCtx.fillStyle = "black";
+        mCtx.fillRect(0, 0, 150, 150);
+        const s = 150 / WORLD_SIZE;
+        mCtx.strokeStyle = "#1a3a3a";
+        buildings.forEach((b) =>
+          mCtx.strokeRect(b.x * s, b.y * s, b.w * s, b.h * s)
+        );
+        mCtx.fillStyle = "#ff004c";
+        seekers.forEach((sk) => mCtx.fillRect(sk.x * s, sk.y * s, 2, 2));
+        mCtx.fillStyle = "#00ffcc";
+        mCtx.fillRect(playerPos.x * s - 2, playerPos.y * s - 2, 4, 4);
+        mCtx.fillStyle = Date.now() % 1000 > 500 ? "white" : "transparent";
+        mCtx.fillRect(signal.x * s - 2, signal.y * s - 2, 4, 4);
       }
 
       function draw() {
         ctx.fillStyle = "#000";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
         ctx.save();
         ctx.translate(-camX, -camY);
 
-        // Grid
         ctx.strokeStyle = "#0a1a1a";
         for (let i = 0; i <= WORLD_SIZE; i += 100) {
           ctx.beginPath();
@@ -284,46 +305,36 @@
           ctx.stroke();
         }
 
-        // Buildings
         ctx.strokeStyle = "#1a3a3a";
         buildings.forEach((b) => ctx.strokeRect(b.x, b.y, b.w, b.h));
 
-        // Signal Node
         if (!discovered) {
-          ctx.strokeStyle = `rgba(0, 255, 204, ${0.3 + Math.random() * 0.7})`;
+          ctx.strokeStyle = `rgba(0, 255, 204, ${
+            0.4 + Math.sin(Date.now() / 200) * 0.3
+          })`;
           ctx.beginPath();
-          ctx.arc(signal.x, signal.y, 10, 0, 7);
+          ctx.arc(signal.x, signal.y, 15, 0, 7);
           ctx.stroke();
         }
 
-        // Seekers
         ctx.fillStyle = "#ff004c";
         seekers.forEach((s) => {
           ctx.beginPath();
-          ctx.arc(s.x, s.y, 4, 0, 7);
+          ctx.arc(s.x, s.y, 3, 0, 7);
           ctx.fill();
         });
 
         ctx.restore();
-
-        // Crosshair (Fixed in Center Viewport)
-        ctx.strokeStyle = "#00ffcc";
-        ctx.strokeRect(mouse.x - 15, mouse.y - 15, 30, 30);
-        ctx.beginPath();
-        ctx.moveTo(mouse.x - 20, mouse.y);
-        ctx.lineTo(mouse.x + 20, mouse.y);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(mouse.x, mouse.y - 20);
-        ctx.lineTo(mouse.x, mouse.y + 20);
-        ctx.stroke();
-
+        drawMinimap();
         requestAnimationFrame(() => {
           update();
           draw();
         });
       }
 
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") window.location.href = "../index.html";
+      });
       draw();
     </script>
   </body>
