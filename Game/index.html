@@ -425,7 +425,7 @@
           );
         if (jetpackTimer > 0)
           buffs.push(
-            "<div class='active-buff' style='color:#00ffff'>[MODSOAR_BOOTS_ENGAGED]</div>"
+            "<div class='active-buff' style='color:#eb178b'>[MODSOAR_BOOTS_ENGAGED]</div>"
           );
         activeList.innerHTML = buffs.length ? buffs.join("") : "NOMINAL";
       }
@@ -449,7 +449,7 @@
               ? "#00ffcc"
               : pu.type === "boost"
               ? "#ff004c"
-              : "#00ffff";
+              : "#eb178b";
           ctx.shadowBlur = pu.type === "jetpack" ? 20 : 10;
           ctx.shadowColor = ctx.fillStyle;
           ctx.fillRect(px, py, 16, 16);
