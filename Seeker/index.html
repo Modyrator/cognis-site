@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>73RRA – SIGNAL_SEEKER: THREAT_UPDATE</title>
+    <title>73RRA – SIGNAL_SEEKER: TERMINAL_THREAT</title>
     <style>
       body {
         margin: 0;
@@ -95,12 +95,46 @@
         color: #ff004c !important;
         text-shadow: 0 0 10px #ff004c;
       }
+      #game-over {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 0, 76, 0.1);
+        color: #ff004c;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(5px);
+      }
     </style>
   </head>
   <body>
+    <div id="game-over">
+      <h1>CONNECTION_TERMINATED</h1>
+      <p>SCANNER_INTEGRITY: 0%</p>
+      <button
+        onclick="location.reload()"
+        style="
+          background: none;
+          border: 1px solid #ff004c;
+          color: #ff004c;
+          padding: 10px 20px;
+          cursor: pointer;
+          font-family: inherit;
+        "
+      >
+        REBOOT_SYSTEM
+      </button>
+    </div>
+
     <div id="game-container">
       <div id="ui-overlay">
         NODES_SECURED: <span id="score">0</span><br />
+        INTEGRITY: <span id="hp">100</span>%<br />
         SYNC: <span id="sync">0</span>%<br />
         STATUS: <span id="status">NOMINAL</span>
       </div>
@@ -116,15 +150,15 @@
 
     <script>
       const memoryLogs = [
-        "The automated sprinklers in Sector 4 are watering plastic flowers.",
-        "A recording: 'Don't be afraid of the Buzz3rs, they are just birds with metal hearts.'",
-        "Factory Log: Production of 'Human Companions' reached 0. They kept building them for 30 years.",
-        "The last human message was a request for more light.",
-        "Digital photo: People smiling. Metadata: 'Summer 2091'. The only copy left.",
-        "A piano plays in a ruined theater. It is just the wind hitting the strings.",
-        "A maintenance bot was found trying to repair a stone statue.",
-        "Log: 'The stars look the same, but no one is naming them anymore.'",
-        "Sensor: Detected a door locked from the inside. It has been shut for 200 years.",
+        "Sprinklers watering plastic flowers.",
+        "Metal-hearted birds.",
+        "Infinite factory production.",
+        "Request for more light.",
+        "Summer 2091 photo.",
+        "Wind-played piano.",
+        "Bot repairing stone.",
+        "Un-named stars.",
+        "200-year locked door.",
       ];
       let unusedLogs = [...memoryLogs];
 
@@ -141,14 +175,15 @@
       const WORLD_SIZE = 2000;
       let score = 0,
         sync = 0,
+        integrity = 100,
         discovered = false,
-        glitchTime = 0;
+        glitchTime = 0,
+        isGameOver = false;
       let camX = 500,
         camY = 500;
-
-      let mousePos = { x: 1000, y: 1000 };
-      let playerPos = { x: 1000, y: 1000 };
-      const MOVE_SMOOTHING = 0.08; // Lower = slower/heavier cursor
+      let mousePos = { x: 1000, y: 1000 },
+        playerPos = { x: 1000, y: 1000 };
+      const MOVE_SMOOTHING = 0.08;
 
       let signal = { x: 400, y: 400 };
       let audioCtx = null,
@@ -157,8 +192,8 @@
       const buildings = [];
       for (let i = 0; i < 40; i++) {
         buildings.push({
-          x: Math.random() * (WORLD_SIZE - 200) + 100,
-          y: Math.random() * (WORLD_SIZE - 200) + 100,
+          x: Math.random() * 1800 + 100,
+          y: Math.random() * 1800 + 100,
           w: Math.random() * 150 + 50,
           h: Math.random() * 150 + 50,
         });
@@ -169,7 +204,7 @@
         y: Math.random() * WORLD_SIZE,
         vx: Math.random() * 1.5 - 0.75,
         vy: Math.random() * 1.5 - 0.75,
-        detectionRange: 120,
+        detectionRange: 130,
       }));
 
       function checkCollision(px, py) {
@@ -179,40 +214,62 @@
         );
       }
 
-      canvas.addEventListener("mousemove", (e) => {
+      function initAudio() {
         if (!audioCtx)
           audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+
+      function playPing(freq, vol) {
+        if (!audioCtx || isGameOver) return;
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        g.gain.setValueAtTime(vol * 0.1, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+      }
+
+      canvas.addEventListener("mousemove", (e) => {
+        initAudio();
         const rect = canvas.getBoundingClientRect();
         mousePos.x = e.clientX - rect.left + camX;
         mousePos.y = e.clientY - rect.top + camY;
       });
 
-      function addLog() {
-        if (unusedLogs.length === 0) unusedLogs = [...memoryLogs];
-        const idx = Math.floor(Math.random() * unusedLogs.length);
-        const msg = unusedLogs.splice(idx, 1)[0];
-        const span = document.createElement("span");
-        span.innerText = `[NODE_${score}] >> ${msg}`;
-        document.getElementById("log-content").prepend(span);
-        glitchTime = 15;
+      function triggerGameOver() {
+        isGameOver = true;
+        document.getElementById("game-over").style.display = "flex";
       }
 
       function update() {
-        // Inertial Movement
+        if (isGameOver) return;
         let targetX = playerPos.x + (mousePos.x - playerPos.x) * MOVE_SMOOTHING;
         let targetY = playerPos.y + (mousePos.y - playerPos.y) * MOVE_SMOOTHING;
-
         if (!checkCollision(targetX, playerPos.y)) playerPos.x = targetX;
         if (!checkCollision(playerPos.x, targetY)) playerPos.y = targetY;
 
-        camX = playerPos.x - canvas.width / 2;
-        camY = playerPos.y - canvas.height / 2;
-        camX = Math.max(0, Math.min(WORLD_SIZE - canvas.width, camX));
-        camY = Math.max(0, Math.min(WORLD_SIZE - canvas.height, camY));
+        camX = Math.max(
+          0,
+          Math.min(WORLD_SIZE - canvas.width, playerPos.x - canvas.width / 2)
+        );
+        camY = Math.max(
+          0,
+          Math.min(WORLD_SIZE - canvas.height, playerPos.y - canvas.height / 2)
+        );
 
         const distToNode = Math.sqrt(
           (playerPos.x - signal.x) ** 2 + (playerPos.y - signal.y) ** 2
         );
+
+        // Sound System
+        if (audioCtx && audioCtx.currentTime > nextPingTime) {
+          const proximity = Math.max(0, 1 - distToNode / 1200);
+          playPing(300 + proximity * 1000, proximity);
+          nextPingTime = audioCtx.currentTime + (0.1 + distToNode / 1800);
+        }
 
         let detected = false;
         seekers.forEach((s) => {
@@ -221,19 +278,10 @@
           );
           if (d < s.detectionRange) {
             detected = true;
-            sync = Math.max(0, sync - 1.5);
-            // Seek player
-            s.vx += (playerPos.x - s.x) * 0.001;
-            s.vy += (playerPos.y - s.y) * 0.001;
-          } else {
-            s.vx += (Math.random() - 0.5) * 0.1;
-            s.vy += (Math.random() - 0.5) * 0.1;
-          }
-          // Speed limit & Collision
-          const speed = Math.sqrt(s.vx ** 2 + s.vy ** 2);
-          if (speed > 1.5) {
-            s.vx *= 0.9;
-            s.vy *= 0.9;
+            integrity -= 0.05; // Static damage
+            if (d < 20) triggerGameOver(); // Physical contact
+            s.vx += (playerPos.x - s.x) * 0.0015;
+            s.vy += (playerPos.y - s.y) * 0.0015;
           }
           if (checkCollision(s.x + s.vx, s.y)) s.vx *= -1;
           if (checkCollision(s.x, s.y + s.vy)) s.vy *= -1;
@@ -241,24 +289,37 @@
           s.y += s.vy;
         });
 
+        if (integrity <= 0) triggerGameOver();
+
         document.getElementById("status").innerText = detected
           ? "WARNING: SCANNER DETECTED"
           : "NOMINAL";
         document.getElementById("status").className = detected
           ? "warning-ui"
           : "";
+        document.getElementById("hp").innerText = Math.ceil(integrity);
 
         if (distToNode < 45 && !discovered) {
           sync = Math.min(100, sync + 1.5);
           if (sync >= 100) {
             score++;
-            addLog();
             discovered = true;
+            integrity = Math.min(100, integrity + 15);
+            if (unusedLogs.length === 0) unusedLogs = [...memoryLogs];
+            const span = document.createElement("span");
+            span.innerText = `[NODE_${score}] >> ${
+              unusedLogs.splice(
+                Math.floor(Math.random() * unusedLogs.length),
+                1
+              )[0]
+            }`;
+            document.getElementById("log-content").prepend(span);
             document.getElementById("score").innerText = score;
+            glitchTime = 15;
             setTimeout(() => {
               signal = {
-                x: Math.random() * WORLD_SIZE,
-                y: Math.random() * WORLD_SIZE,
+                x: Math.random() * 1800 + 100,
+                y: Math.random() * 1800 + 100,
               };
               sync = 0;
               discovered = false;
@@ -267,7 +328,6 @@
         } else if (!discovered) {
           sync = Math.max(0, sync - 0.2);
         }
-
         document.getElementById("sync").innerText = Math.floor(sync);
       }
 
@@ -312,18 +372,16 @@
 
         ctx.restore();
 
-        // Cursor UI
-        const viewX = playerPos.x - camX;
-        const viewY = playerPos.y - camY;
-        ctx.strokeStyle = "#00ffcc";
-        ctx.strokeRect(viewX - 15, viewY - 15, 30, 30);
+        // Player UI
+        const vx = playerPos.x - camX,
+          vy = playerPos.y - camY;
+        ctx.strokeStyle = integrity < 30 ? "#ff004c" : "#00ffcc";
+        ctx.strokeRect(vx - 15, vy - 15, 30, 30);
         ctx.beginPath();
-        ctx.moveTo(viewX - 20, viewY);
-        ctx.lineTo(viewX + 20, viewY);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(viewX, viewY - 20);
-        ctx.lineTo(viewX, viewY + 20);
+        ctx.moveTo(vx - 20, vy);
+        ctx.lineTo(vx + 20, vy);
+        ctx.moveTo(vx, vy - 20);
+        ctx.lineTo(vx, vy + 20);
         ctx.stroke();
 
         if (glitchTime > 0) {
@@ -332,21 +390,18 @@
           glitchTime--;
         }
 
-        // Minimap
         mCtx.fillStyle = "black";
         mCtx.fillRect(0, 0, 150, 150);
         const s = 150 / WORLD_SIZE;
         mCtx.fillStyle = "#ff004c";
         seekers.forEach((sk) => mCtx.fillRect(sk.x * s, sk.y * s, 2, 2));
-        mCtx.fillStyle = "#00ffcc";
+        mCtx.fillStyle = integrity < 30 ? "#ff004c" : "#00ffcc";
         mCtx.fillRect(playerPos.x * s - 2, playerPos.y * s - 2, 4, 4);
         mCtx.fillStyle = "white";
         mCtx.fillRect(signal.x * s - 2, signal.y * s - 2, 3, 3);
 
-        requestAnimationFrame(() => {
-          update();
-          draw();
-        });
+        update();
+        requestAnimationFrame(draw);
       }
 
       window.addEventListener("keydown", (e) => {
