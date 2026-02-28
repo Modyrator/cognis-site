@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>73RRA – SIGNAL_SEEKER: BOUNDARY_LOCK</title>
+    <title>73RRA – SIGNAL_SEEKER: THREAT_UPDATE</title>
     <style>
       body {
         margin: 0;
@@ -43,17 +43,6 @@
         border-left: 2px solid #00ffcc;
         padding-left: 10px;
         color: #aaa;
-        animation: scanIn 0.5s ease;
-      }
-      @keyframes scanIn {
-        from {
-          opacity: 0;
-          transform: translateX(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateX(0);
-        }
       }
       #game-container {
         position: relative;
@@ -102,6 +91,10 @@
         background: rgba(0, 20, 20, 0.4);
         z-index: 5;
       }
+      .warning-ui {
+        color: #ff004c !important;
+        text-shadow: 0 0 10px #ff004c;
+      }
     </style>
   </head>
   <body>
@@ -109,7 +102,7 @@
       <div id="ui-overlay">
         NODES_SECURED: <span id="score">0</span><br />
         SYNC: <span id="sync">0</span>%<br />
-        COORDS: <span id="coords">0,0</span>
+        STATUS: <span id="status">NOMINAL</span>
       </div>
       <a href="../index.html" id="exit-btn">DISCONNECT [ESC]</a>
       <canvas id="radarCanvas"></canvas>
@@ -139,7 +132,6 @@
       const ctx = canvas.getContext("2d");
       const mCanvas = document.getElementById("minimap");
       const mCtx = mCanvas.getContext("2d");
-      const logContent = document.getElementById("log-content");
 
       canvas.width = window.innerWidth - 320;
       canvas.height = window.innerHeight;
@@ -153,26 +145,31 @@
         glitchTime = 0;
       let camX = 500,
         camY = 500;
+
+      let mousePos = { x: 1000, y: 1000 };
       let playerPos = { x: 1000, y: 1000 };
+      const MOVE_SMOOTHING = 0.08; // Lower = slower/heavier cursor
+
       let signal = { x: 400, y: 400 };
       let audioCtx = null,
         nextPingTime = 0;
 
       const buildings = [];
-      for (let i = 0; i < 35; i++) {
+      for (let i = 0; i < 40; i++) {
         buildings.push({
           x: Math.random() * (WORLD_SIZE - 200) + 100,
           y: Math.random() * (WORLD_SIZE - 200) + 100,
-          w: Math.random() * 120 + 60,
-          h: Math.random() * 120 + 60,
+          w: Math.random() * 150 + 50,
+          h: Math.random() * 150 + 50,
         });
       }
 
-      let seekers = Array.from({ length: 12 }, () => ({
+      let seekers = Array.from({ length: 10 }, () => ({
         x: Math.random() * WORLD_SIZE,
         y: Math.random() * WORLD_SIZE,
-        vx: Math.random() * 2 - 1,
-        vy: Math.random() * 2 - 1,
+        vx: Math.random() * 1.5 - 0.75,
+        vy: Math.random() * 1.5 - 0.75,
+        detectionRange: 120,
       }));
 
       function checkCollision(px, py) {
@@ -182,37 +179,12 @@
         );
       }
 
-      function initAudio() {
+      canvas.addEventListener("mousemove", (e) => {
         if (!audioCtx)
           audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-
-      function playPing(freq, vol) {
-        if (!audioCtx) return;
-        const osc = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        g.gain.setValueAtTime(vol * 0.1, audioCtx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-        osc.connect(g);
-        g.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.1);
-      }
-
-      canvas.addEventListener("mousemove", (e) => {
-        initAudio();
         const rect = canvas.getBoundingClientRect();
-        let targetX = e.clientX - rect.left + camX;
-        let targetY = e.clientY - rect.top + camY;
-
-        // Clamp to World Size
-        targetX = Math.max(0, Math.min(WORLD_SIZE, targetX));
-        targetY = Math.max(0, Math.min(WORLD_SIZE, targetY));
-
-        if (!checkCollision(targetX, playerPos.y)) playerPos.x = targetX;
-        if (!checkCollision(playerPos.x, targetY)) playerPos.y = targetY;
+        mousePos.x = e.clientX - rect.left + camX;
+        mousePos.y = e.clientY - rect.top + camY;
       });
 
       function addLog() {
@@ -221,30 +193,63 @@
         const msg = unusedLogs.splice(idx, 1)[0];
         const span = document.createElement("span");
         span.innerText = `[NODE_${score}] >> ${msg}`;
-        logContent.prepend(span);
-        glitchTime = 15; // Trigger glitch visual
+        document.getElementById("log-content").prepend(span);
+        glitchTime = 15;
       }
 
       function update() {
+        // Inertial Movement
+        let targetX = playerPos.x + (mousePos.x - playerPos.x) * MOVE_SMOOTHING;
+        let targetY = playerPos.y + (mousePos.y - playerPos.y) * MOVE_SMOOTHING;
+
+        if (!checkCollision(targetX, playerPos.y)) playerPos.x = targetX;
+        if (!checkCollision(playerPos.x, targetY)) playerPos.y = targetY;
+
         camX = playerPos.x - canvas.width / 2;
         camY = playerPos.y - canvas.height / 2;
-
-        // Clamp Camera to prevent showing outside map
         camX = Math.max(0, Math.min(WORLD_SIZE - canvas.width, camX));
         camY = Math.max(0, Math.min(WORLD_SIZE - canvas.height, camY));
 
-        const dist = Math.sqrt(
+        const distToNode = Math.sqrt(
           (playerPos.x - signal.x) ** 2 + (playerPos.y - signal.y) ** 2
         );
 
-        if (audioCtx && audioCtx.currentTime > nextPingTime) {
-          const proximity = Math.max(0, 1 - dist / 1000);
-          playPing(400 + proximity * 1200, proximity);
-          nextPingTime = audioCtx.currentTime + (0.1 + dist / 1500);
-        }
+        let detected = false;
+        seekers.forEach((s) => {
+          let d = Math.sqrt(
+            (playerPos.x - s.x) ** 2 + (playerPos.y - s.y) ** 2
+          );
+          if (d < s.detectionRange) {
+            detected = true;
+            sync = Math.max(0, sync - 1.5);
+            // Seek player
+            s.vx += (playerPos.x - s.x) * 0.001;
+            s.vy += (playerPos.y - s.y) * 0.001;
+          } else {
+            s.vx += (Math.random() - 0.5) * 0.1;
+            s.vy += (Math.random() - 0.5) * 0.1;
+          }
+          // Speed limit & Collision
+          const speed = Math.sqrt(s.vx ** 2 + s.vy ** 2);
+          if (speed > 1.5) {
+            s.vx *= 0.9;
+            s.vy *= 0.9;
+          }
+          if (checkCollision(s.x + s.vx, s.y)) s.vx *= -1;
+          if (checkCollision(s.x, s.y + s.vy)) s.vy *= -1;
+          s.x += s.vx;
+          s.y += s.vy;
+        });
 
-        if (dist < 40 && !discovered) {
-          sync = Math.min(100, sync + 1.2);
+        document.getElementById("status").innerText = detected
+          ? "WARNING: SCANNER DETECTED"
+          : "NOMINAL";
+        document.getElementById("status").className = detected
+          ? "warning-ui"
+          : "";
+
+        if (distToNode < 45 && !discovered) {
+          sync = Math.min(100, sync + 1.5);
           if (sync >= 100) {
             score++;
             addLog();
@@ -260,42 +265,10 @@
             }, 1500);
           }
         } else if (!discovered) {
-          sync = Math.max(0, sync - 0.4);
+          sync = Math.max(0, sync - 0.2);
         }
 
         document.getElementById("sync").innerText = Math.floor(sync);
-        document.getElementById("coords").innerText = `${Math.floor(
-          playerPos.x
-        )},${Math.floor(playerPos.y)}`;
-
-        seekers.forEach((s) => {
-          if (checkCollision(s.x + s.vx, s.y)) s.vx *= -1;
-          if (checkCollision(s.x, s.y + s.vy)) s.vy *= -1;
-          s.x += s.vx;
-          s.y += s.vy;
-          if (s.x < 0 || s.x > WORLD_SIZE) s.vx *= -1;
-          if (s.y < 0 || s.y > WORLD_SIZE) s.vy *= -1;
-          if (
-            Math.sqrt((playerPos.x - s.x) ** 2 + (playerPos.y - s.y) ** 2) < 30
-          )
-            sync = Math.max(0, sync - 3);
-        });
-      }
-
-      function drawMinimap() {
-        mCtx.fillStyle = "black";
-        mCtx.fillRect(0, 0, 150, 150);
-        const s = 150 / WORLD_SIZE;
-        mCtx.strokeStyle = "#1a3a3a";
-        buildings.forEach((b) =>
-          mCtx.strokeRect(b.x * s, b.y * s, b.w * s, b.h * s)
-        );
-        mCtx.fillStyle = "#ff004c";
-        seekers.forEach((sk) => mCtx.fillRect(sk.x * s, sk.y * s, 2, 2));
-        mCtx.fillStyle = "#00ffcc";
-        mCtx.fillRect(playerPos.x * s - 2, playerPos.y * s - 2, 4, 4);
-        mCtx.fillStyle = Date.now() % 1000 > 500 ? "white" : "transparent";
-        mCtx.fillRect(signal.x * s - 2, signal.y * s - 2, 4, 4);
       }
 
       function draw() {
@@ -305,7 +278,7 @@
         ctx.translate(-camX, -camY);
 
         ctx.strokeStyle = "#0a1a1a";
-        for (let i = 0; i <= WORLD_SIZE; i += 100) {
+        for (let i = 0; i <= WORLD_SIZE; i += 200) {
           ctx.beginPath();
           ctx.moveTo(i, 0);
           ctx.lineTo(i, WORLD_SIZE);
@@ -323,49 +296,53 @@
           ctx.strokeStyle = `rgba(0, 255, 204, ${
             0.4 + Math.sin(Date.now() / 200) * 0.3
           })`;
-          ctx.beginPath();
-          ctx.arc(signal.x, signal.y, 15, 0, 7);
-          ctx.stroke();
+          ctx.strokeRect(signal.x - 10, signal.y - 10, 20, 20);
         }
 
-        ctx.fillStyle = "#ff004c";
         seekers.forEach((s) => {
+          ctx.fillStyle = "#ff004c";
           ctx.beginPath();
-          ctx.arc(s.x, s.y, 3, 0, 7);
+          ctx.arc(s.x, s.y, 4, 0, 7);
           ctx.fill();
+          ctx.strokeStyle = "rgba(255, 0, 76, 0.1)";
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.detectionRange, 0, 7);
+          ctx.stroke();
         });
 
         ctx.restore();
 
-        // Draw Player UI relative to viewport mouse
-        const mouseX = playerPos.x - camX;
-        const mouseY = playerPos.y - camY;
+        // Cursor UI
+        const viewX = playerPos.x - camX;
+        const viewY = playerPos.y - camY;
         ctx.strokeStyle = "#00ffcc";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(mouseX - 15, mouseY - 15, 30, 30);
+        ctx.strokeRect(viewX - 15, viewY - 15, 30, 30);
         ctx.beginPath();
-        ctx.moveTo(mouseX - 20, mouseY);
-        ctx.lineTo(mouseX + 20, mouseY);
+        ctx.moveTo(viewX - 20, viewY);
+        ctx.lineTo(viewX + 20, viewY);
         ctx.stroke();
         ctx.beginPath();
-        ctx.moveTo(mouseX, mouseY - 20);
-        ctx.lineTo(mouseX, mouseY + 20);
+        ctx.moveTo(viewX, viewY - 20);
+        ctx.lineTo(viewX, viewY + 20);
         ctx.stroke();
 
-        // Transmission Glitch Effect
         if (glitchTime > 0) {
-          ctx.fillStyle = `rgba(0, 255, 204, ${Math.random() * 0.3})`;
-          for (let i = 0; i < 10; i++)
-            ctx.fillRect(
-              0,
-              Math.random() * canvas.height,
-              canvas.width,
-              Math.random() * 5
-            );
+          ctx.fillStyle = "rgba(0, 255, 204, 0.1)";
+          ctx.fillRect(0, Math.random() * canvas.height, canvas.width, 2);
           glitchTime--;
         }
 
-        drawMinimap();
+        // Minimap
+        mCtx.fillStyle = "black";
+        mCtx.fillRect(0, 0, 150, 150);
+        const s = 150 / WORLD_SIZE;
+        mCtx.fillStyle = "#ff004c";
+        seekers.forEach((sk) => mCtx.fillRect(sk.x * s, sk.y * s, 2, 2));
+        mCtx.fillStyle = "#00ffcc";
+        mCtx.fillRect(playerPos.x * s - 2, playerPos.y * s - 2, 4, 4);
+        mCtx.fillStyle = "white";
+        mCtx.fillRect(signal.x * s - 2, signal.y * s - 2, 3, 3);
+
         requestAnimationFrame(() => {
           update();
           draw();
