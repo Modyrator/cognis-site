@@ -2,6 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cognis – Ascension Trial</title>
     <style>
       html,
       body {
@@ -11,6 +13,7 @@
         overflow: hidden;
         font-family: "Courier New", monospace;
         color: #d4af37;
+        height: 100%;
       }
 
       canvas {
@@ -19,14 +22,17 @@
         background: linear-gradient(#050505, #000);
         border-left: 2px solid #333;
         border-right: 2px solid #333;
+        /* Ensure the canvas is visible even if JS fails to load */
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
       }
 
       .overlay {
         position: absolute;
-        top: 10px;
+        top: 20px;
         width: 100%;
         text-align: center;
         pointer-events: none;
+        text-shadow: 0 0 5px black;
       }
 
       .hint {
@@ -47,16 +53,14 @@
         color: #d4af37;
       }
     </style>
-    <title>Cognis – Ascension Trial</title>
-    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <canvas id="game"></canvas>
+    <canvas id="game" width="400" height="600"></canvas>
 
     <div class="overlay">
       <h1>ASCENSION PROTOCOL</h1>
       <p>Wait. Jump. Persist.</p>
-      <p class="hint">SPACE to jump</p>
+      <p class="hint">SPACE to jump | ARROWS to move</p>
       <a class="back-link" href="../index.html">⮐ Return to Archive</a>
     </div>
 
