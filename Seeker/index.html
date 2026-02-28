@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>73RRA – SIGNAL_SEEKER: TERMINAL_THREAT</title>
+    <title>73RRA – SIGNAL_SEEKER: GRID_STABILITY</title>
     <style>
       body {
         margin: 0;
@@ -53,7 +53,6 @@
       canvas {
         display: block;
         background: #000;
-        cursor: none;
       }
       #ui-overlay {
         position: absolute;
@@ -64,6 +63,33 @@
         font-size: 11px;
         letter-spacing: 2px;
         z-index: 5;
+      }
+      #hp-bar-container {
+        width: 150px;
+        height: 10px;
+        border: 1px solid #333;
+        margin-top: 5px;
+        background: #111;
+      }
+      #hp-fill {
+        height: 100%;
+        background: #00ffcc;
+        width: 100%;
+        transition: width 0.3s;
+      }
+      #game-over {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(20, 0, 0, 0.9);
+        color: #ff004c;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
       }
       #exit-btn {
         position: absolute;
@@ -77,52 +103,19 @@
         text-decoration: none;
         z-index: 100;
       }
-      #exit-btn:hover {
-        color: #fff;
-        border-color: #00ffcc;
-      }
-      #minimap {
-        position: absolute;
-        bottom: 30px;
-        right: 30px;
-        width: 150px;
-        height: 150px;
-        border: 1px solid #1a3a3a;
-        background: rgba(0, 20, 20, 0.4);
-        z-index: 5;
-      }
-      .warning-ui {
-        color: #ff004c !important;
-        text-shadow: 0 0 10px #ff004c;
-      }
-      #game-over {
-        display: none;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(255, 0, 76, 0.1);
-        color: #ff004c;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-        backdrop-filter: blur(5px);
-      }
     </style>
   </head>
   <body>
     <div id="game-over">
-      <h1>CONNECTION_TERMINATED</h1>
-      <p>SCANNER_INTEGRITY: 0%</p>
+      <h1>HARDWARE_FAILURE</h1>
+      <p>CRITICAL INTEGRITY LOSS</p>
       <button
         onclick="location.reload()"
         style="
           background: none;
           border: 1px solid #ff004c;
           color: #ff004c;
-          padding: 10px 20px;
+          padding: 10px;
           cursor: pointer;
           font-family: inherit;
         "
@@ -133,280 +126,269 @@
 
     <div id="game-container">
       <div id="ui-overlay">
-        NODES_SECURED: <span id="score">0</span><br />
-        INTEGRITY: <span id="hp">100</span>%<br />
-        SYNC: <span id="sync">0</span>%<br />
-        STATUS: <span id="status">NOMINAL</span>
+        SECTOR: <span id="sector-lvl">1</span><br />
+        NODES: <span id="score">0</span>/5<br />
+        HP:
+        <div id="hp-bar-container"><div id="hp-fill"></div></div>
       </div>
       <a href="../index.html" id="exit-btn">DISCONNECT [ESC]</a>
       <canvas id="radarCanvas"></canvas>
-      <canvas id="minimap"></canvas>
     </div>
 
     <div id="sidebar">
-      <div id="log-header">MEMORY_BANK.vrc</div>
+      <div id="log-header">SECTOR_DATA.vrc</div>
       <div id="log-content"></div>
     </div>
 
     <script>
       const memoryLogs = [
-        "Sprinklers watering plastic flowers.",
-        "Metal-hearted birds.",
-        "Infinite factory production.",
-        "Request for more light.",
-        "Summer 2091 photo.",
-        "Wind-played piano.",
-        "Bot repairing stone.",
-        "Un-named stars.",
-        "200-year locked door.",
+        "Atmospheric scrubbers still spinning.",
+        "Found a child's toy made of lead.",
+        "Satellite relay: 'Awaiting Response'.",
+        "Automated highway lights flickering.",
+        "A server room filled with frozen water.",
+        "Old billboard: 'THE FUTURE IS BRIGHT'.",
       ];
       let unusedLogs = [...memoryLogs];
 
       const canvas = document.getElementById("radarCanvas");
       const ctx = canvas.getContext("2d");
-      const mCanvas = document.getElementById("minimap");
-      const mCtx = mCanvas.getContext("2d");
-
       canvas.width = window.innerWidth - 320;
       canvas.height = window.innerHeight;
-      mCanvas.width = 150;
-      mCanvas.height = 150;
 
-      const WORLD_SIZE = 2000;
+      const WORLD_SIZE = 2500;
+      const GRID_CELLS = 8;
+      const CELL_SIZE = WORLD_SIZE / GRID_CELLS;
+
       let score = 0,
+        sector = 1,
         sync = 0,
-        integrity = 100,
-        discovered = false,
-        glitchTime = 0,
+        hp = 50,
+        maxHP = 50,
         isGameOver = false;
-      let camX = 500,
-        camY = 500;
-      let mousePos = { x: 1000, y: 1000 },
-        playerPos = { x: 1000, y: 1000 };
-      const MOVE_SMOOTHING = 0.08;
-
-      let signal = { x: 400, y: 400 };
+      let player = { x: 1250, y: 1250, speed: 5 };
+      let keys = {};
+      let buildings = [],
+        seekers = [],
+        signal = { x: 0, y: 0 };
       let audioCtx = null,
         nextPingTime = 0;
 
-      const buildings = [];
-      for (let i = 0; i < 40; i++) {
-        buildings.push({
-          x: Math.random() * 1800 + 100,
-          y: Math.random() * 1800 + 100,
-          w: Math.random() * 150 + 50,
-          h: Math.random() * 150 + 50,
-        });
+      function initMap() {
+        buildings = [];
+        // Grid-based generation ensures accessibility
+        for (let gx = 0; gx < GRID_CELLS; gx++) {
+          for (let gy = 0; gy < GRID_CELLS; gy++) {
+            // Leave the player's starting grid empty
+            let centerX = gx * CELL_SIZE + CELL_SIZE / 2;
+            let centerY = gy * CELL_SIZE + CELL_SIZE / 2;
+            let distToStart = Math.sqrt(
+              (centerX - 1250) ** 2 + (centerY - 1250) ** 2
+            );
+
+            if (distToStart > 300 && Math.random() > 0.3) {
+              let w = Math.random() * (CELL_SIZE * 0.6) + 50;
+              let h = Math.random() * (CELL_SIZE * 0.6) + 50;
+              buildings.push({
+                x: gx * CELL_SIZE + (CELL_SIZE - w) / 2,
+                y: gy * CELL_SIZE + (CELL_SIZE - h) / 2,
+                w: w,
+                h: h,
+              });
+            }
+          }
+        }
+        spawnSignal();
+        seekers = [];
+        for (let i = 0; i < 6 + sector * 2; i++) {
+          seekers.push({
+            x: Math.random() * WORLD_SIZE,
+            y: Math.random() * WORLD_SIZE,
+            vx: (Math.random() - 0.5) * 2,
+            vy: (Math.random() - 0.5) * 2,
+            range: 140,
+            patrolType: Math.random() > 0.5 ? "circle" : "roam",
+            angle: Math.random() * Math.PI * 2,
+          });
+        }
       }
 
-      let seekers = Array.from({ length: 10 }, () => ({
-        x: Math.random() * WORLD_SIZE,
-        y: Math.random() * WORLD_SIZE,
-        vx: Math.random() * 1.5 - 0.75,
-        vy: Math.random() * 1.5 - 0.75,
-        detectionRange: 130,
-      }));
+      function spawnSignal() {
+        signal = {
+          x: Math.random() * (WORLD_SIZE - 400) + 200,
+          y: Math.random() * (WORLD_SIZE - 400) + 200,
+        };
+        if (checkCollision(signal.x, signal.y)) spawnSignal();
+      }
 
       function checkCollision(px, py) {
-        if (px < 0 || px > WORLD_SIZE || py < 0 || py > WORLD_SIZE) return true;
+        if (px < 20 || px > WORLD_SIZE - 20 || py < 20 || py > WORLD_SIZE - 20)
+          return true;
         return buildings.some(
-          (b) => px > b.x && px < b.x + b.w && py > b.y && py < b.y + b.h
+          (b) =>
+            px > b.x - 5 &&
+            px < b.x + b.w + 5 &&
+            py > b.y - 5 &&
+            py < b.y + b.h + 5
         );
       }
 
-      function initAudio() {
-        if (!audioCtx)
-          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-
-      function playPing(freq, vol) {
-        if (!audioCtx || isGameOver) return;
-        const osc = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        g.gain.setValueAtTime(vol * 0.1, audioCtx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-        osc.connect(g);
-        g.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.1);
-      }
-
-      canvas.addEventListener("mousemove", (e) => {
-        initAudio();
-        const rect = canvas.getBoundingClientRect();
-        mousePos.x = e.clientX - rect.left + camX;
-        mousePos.y = e.clientY - rect.top + camY;
+      window.addEventListener("keydown", (e) => {
+        keys[e.code] = true;
+        if (e.code === "Escape") window.location.href = "../index.html";
       });
-
-      function triggerGameOver() {
-        isGameOver = true;
-        document.getElementById("game-over").style.display = "flex";
-      }
+      window.addEventListener("keyup", (e) => (keys[e.code] = false));
 
       function update() {
         if (isGameOver) return;
-        let targetX = playerPos.x + (mousePos.x - playerPos.x) * MOVE_SMOOTHING;
-        let targetY = playerPos.y + (mousePos.y - playerPos.y) * MOVE_SMOOTHING;
-        if (!checkCollision(targetX, playerPos.y)) playerPos.x = targetX;
-        if (!checkCollision(playerPos.x, targetY)) playerPos.y = targetY;
-
-        camX = Math.max(
-          0,
-          Math.min(WORLD_SIZE - canvas.width, playerPos.x - canvas.width / 2)
-        );
-        camY = Math.max(
-          0,
-          Math.min(WORLD_SIZE - canvas.height, playerPos.y - canvas.height / 2)
-        );
-
-        const distToNode = Math.sqrt(
-          (playerPos.x - signal.x) ** 2 + (playerPos.y - signal.y) ** 2
-        );
-
-        // Sound System
-        if (audioCtx && audioCtx.currentTime > nextPingTime) {
-          const proximity = Math.max(0, 1 - distToNode / 1200);
-          playPing(300 + proximity * 1000, proximity);
-          nextPingTime = audioCtx.currentTime + (0.1 + distToNode / 1800);
+        if (
+          !audioCtx &&
+          (keys["KeyW"] || keys["KeyA"] || keys["KeyS"] || keys["KeyD"])
+        ) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
 
-        let detected = false;
+        let dx = 0,
+          dy = 0;
+        if (keys["KeyW"]) dy -= player.speed;
+        if (keys["KeyS"]) dy += player.speed;
+        if (keys["KeyA"]) dx -= player.speed;
+        if (keys["KeyD"]) dx += player.speed;
+
+        if (!checkCollision(player.x + dx, player.y)) player.x += dx;
+        if (!checkCollision(player.x, player.y + dy)) player.y += dy;
+
         seekers.forEach((s) => {
-          let d = Math.sqrt(
-            (playerPos.x - s.x) ** 2 + (playerPos.y - s.y) ** 2
-          );
-          if (d < s.detectionRange) {
-            detected = true;
-            integrity -= 0.05; // Static damage
-            if (d < 20) triggerGameOver(); // Physical contact
-            s.vx += (playerPos.x - s.x) * 0.0015;
-            s.vy += (playerPos.y - s.y) * 0.0015;
+          let dist = Math.sqrt((player.x - s.x) ** 2 + (player.y - s.y) ** 2);
+          if (dist < s.range) {
+            hp -= 0.083; // 5 dmg per second
+            s.x += (player.x - s.x) * 0.015;
+            s.y += (player.y - s.y) * 0.015;
+          } else {
+            if (s.patrolType === "roam") {
+              if (checkCollision(s.x + s.vx * 10, s.y + s.vy * 10)) {
+                s.vx *= -1;
+                s.vy *= -1;
+              }
+              s.x += s.vx;
+              s.y += s.vy;
+            } else {
+              s.angle += 0.02;
+              s.x += Math.cos(s.angle) * 2;
+              s.y += Math.sin(s.angle) * 2;
+            }
           }
-          if (checkCollision(s.x + s.vx, s.y)) s.vx *= -1;
-          if (checkCollision(s.x, s.y + s.vy)) s.vy *= -1;
-          s.x += s.vx;
-          s.y += s.vy;
         });
 
-        if (integrity <= 0) triggerGameOver();
+        let distNode = Math.sqrt(
+          (player.x - signal.x) ** 2 + (player.y - signal.y) ** 2
+        );
 
-        document.getElementById("status").innerText = detected
-          ? "WARNING: SCANNER DETECTED"
-          : "NOMINAL";
-        document.getElementById("status").className = detected
-          ? "warning-ui"
-          : "";
-        document.getElementById("hp").innerText = Math.ceil(integrity);
+        // Audio Guidance
+        if (audioCtx && audioCtx.currentTime > nextPingTime) {
+          let prox = Math.max(0, 1 - distNode / 1800);
+          let osc = audioCtx.createOscillator();
+          let g = audioCtx.createGain();
+          osc.frequency.setValueAtTime(150 + prox * 900, audioCtx.currentTime);
+          g.gain.setValueAtTime(prox * 0.04, audioCtx.currentTime);
+          g.gain.exponentialRampToValueAtTime(
+            0.001,
+            audioCtx.currentTime + 0.1
+          );
+          osc.connect(g);
+          g.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.1);
+          nextPingTime = audioCtx.currentTime + (0.15 + distNode / 2200);
+        }
 
-        if (distToNode < 45 && !discovered) {
+        if (distNode < 60) {
           sync = Math.min(100, sync + 1.5);
           if (sync >= 100) {
             score++;
-            discovered = true;
-            integrity = Math.min(100, integrity + 15);
-            if (unusedLogs.length === 0) unusedLogs = [...memoryLogs];
-            const span = document.createElement("span");
-            span.innerText = `[NODE_${score}] >> ${
-              unusedLogs.splice(
-                Math.floor(Math.random() * unusedLogs.length),
-                1
-              )[0]
-            }`;
-            document.getElementById("log-content").prepend(span);
-            document.getElementById("score").innerText = score;
-            glitchTime = 15;
-            setTimeout(() => {
-              signal = {
-                x: Math.random() * 1800 + 100,
-                y: Math.random() * 1800 + 100,
-              };
-              sync = 0;
-              discovered = false;
-            }, 1500);
+            hp = Math.min(maxHP, hp + 10);
+            addLog();
+            sync = 0;
+            if (score % 5 === 0) {
+              sector++;
+              document.getElementById("sector-lvl").innerText = sector;
+              player.x = 1250;
+              player.y = 1250;
+              initMap();
+            } else {
+              spawnSignal();
+            }
           }
-        } else if (!discovered) {
-          sync = Math.max(0, sync - 0.2);
+        } else {
+          sync = Math.max(0, sync - 0.3);
         }
-        document.getElementById("sync").innerText = Math.floor(sync);
+
+        document.getElementById("hp-fill").style.width =
+          (hp / maxHP) * 100 + "%";
+        if (hp <= 0) {
+          isGameOver = true;
+          document.getElementById("game-over").style.display = "flex";
+        }
+      }
+
+      function addLog() {
+        if (unusedLogs.length === 0) unusedLogs = [...memoryLogs];
+        const msg = unusedLogs.splice(
+          Math.floor(Math.random() * unusedLogs.length),
+          1
+        )[0];
+        const span = document.createElement("span");
+        span.innerText = `[SEC_${sector}] >> ${msg}`;
+        document.getElementById("log-content").prepend(span);
       }
 
       function draw() {
         ctx.fillStyle = "#000";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const camX = player.x - canvas.width / 2;
+        const camY = player.y - canvas.height / 2;
+
         ctx.save();
         ctx.translate(-camX, -camY);
 
-        ctx.strokeStyle = "#0a1a1a";
-        for (let i = 0; i <= WORLD_SIZE; i += 200) {
-          ctx.beginPath();
-          ctx.moveTo(i, 0);
-          ctx.lineTo(i, WORLD_SIZE);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(0, i);
-          ctx.lineTo(WORLD_SIZE, i);
-          ctx.stroke();
-        }
+        // Boundary
+        ctx.strokeStyle = "#111";
+        ctx.strokeRect(0, 0, WORLD_SIZE, WORLD_SIZE);
 
+        // Buildings (Grid-Safe)
         ctx.strokeStyle = "#1a3a3a";
         buildings.forEach((b) => ctx.strokeRect(b.x, b.y, b.w, b.h));
 
-        if (!discovered) {
-          ctx.strokeStyle = `rgba(0, 255, 204, ${
-            0.4 + Math.sin(Date.now() / 200) * 0.3
-          })`;
-          ctx.strokeRect(signal.x - 10, signal.y - 10, 20, 20);
-        }
+        // Node
+        ctx.strokeStyle = `rgba(255,255,255, ${
+          0.5 + Math.sin(Date.now() / 150) * 0.5
+        })`;
+        ctx.beginPath();
+        ctx.arc(signal.x, signal.y, 20, 0, 7);
+        ctx.stroke();
 
+        // Seekers
         seekers.forEach((s) => {
           ctx.fillStyle = "#ff004c";
           ctx.beginPath();
-          ctx.arc(s.x, s.y, 4, 0, 7);
+          ctx.arc(s.x, s.y, 5, 0, 7);
           ctx.fill();
-          ctx.strokeStyle = "rgba(255, 0, 76, 0.1)";
+          ctx.strokeStyle = "rgba(255,0,76,0.1)";
           ctx.beginPath();
-          ctx.arc(s.x, s.y, s.detectionRange, 0, 7);
+          ctx.arc(s.x, s.y, s.range, 0, 7);
           ctx.stroke();
         });
 
+        // Player Bot
+        ctx.strokeStyle = "#00ffcc";
+        ctx.strokeRect(player.x - 12, player.y - 12, 24, 24);
+
         ctx.restore();
-
-        // Player UI
-        const vx = playerPos.x - camX,
-          vy = playerPos.y - camY;
-        ctx.strokeStyle = integrity < 30 ? "#ff004c" : "#00ffcc";
-        ctx.strokeRect(vx - 15, vy - 15, 30, 30);
-        ctx.beginPath();
-        ctx.moveTo(vx - 20, vy);
-        ctx.lineTo(vx + 20, vy);
-        ctx.moveTo(vx, vy - 20);
-        ctx.lineTo(vx, vy + 20);
-        ctx.stroke();
-
-        if (glitchTime > 0) {
-          ctx.fillStyle = "rgba(0, 255, 204, 0.1)";
-          ctx.fillRect(0, Math.random() * canvas.height, canvas.width, 2);
-          glitchTime--;
-        }
-
-        mCtx.fillStyle = "black";
-        mCtx.fillRect(0, 0, 150, 150);
-        const s = 150 / WORLD_SIZE;
-        mCtx.fillStyle = "#ff004c";
-        seekers.forEach((sk) => mCtx.fillRect(sk.x * s, sk.y * s, 2, 2));
-        mCtx.fillStyle = integrity < 30 ? "#ff004c" : "#00ffcc";
-        mCtx.fillRect(playerPos.x * s - 2, playerPos.y * s - 2, 4, 4);
-        mCtx.fillStyle = "white";
-        mCtx.fillRect(signal.x * s - 2, signal.y * s - 2, 3, 3);
-
         update();
         requestAnimationFrame(draw);
       }
 
-      window.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") window.location.href = "../index.html";
-      });
+      initMap();
       draw();
     </script>
   </body>
