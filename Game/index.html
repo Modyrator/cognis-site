@@ -121,19 +121,15 @@
       <h3 class="legend-header" style="margin-top: 20px">UPGRADES</h3>
       <div class="legend-item">
         <div class="color-dot" style="background: #d4af37"></div>
-        <div><strong>AEGIS:</strong><br />Bounces you back up if you fall.</div>
+        <div><strong>AEGIS:</strong><br />Safety bounce if you fall.</div>
       </div>
       <div class="legend-item">
         <div class="color-dot" style="background: #00ffcc"></div>
-        <div>
-          <strong>BUFFER:</strong><br />Slows platform speed significantly.
-        </div>
+        <div><strong>BUFFER:</strong><br />Slows all platform movement.</div>
       </div>
       <div class="legend-item">
         <div class="color-dot" style="background: #ff004c"></div>
-        <div>
-          <strong>LATTICE:</strong><br />Attracts you to safe platforms.
-        </div>
+        <div><strong>LATTICE:</strong><br />Center-aligned jump assist.</div>
       </div>
     </div>
 
@@ -208,16 +204,16 @@
       let slowMoTimer = 0,
         magnetTimer = 0,
         lastMilestone = 0;
+      let spawnCount = 0; // Tracking for guaranteed spawn
 
-      // SETTINGS
-      const PLATFORM_COUNT = 12; // Increased for better density
-      const RECYCLE_DISTANCE = 750; // Tighter loop to prevent empty space
+      const PLATFORM_COUNT = 9; // Thinned out for better control
 
       function init() {
         score = 0;
         scoreEl.innerText = 0;
         lastMilestone = 0;
         isGameOver = false;
+        spawnCount = 0;
         gameOverScreen.style.display = "none";
         slowMoTimer = 0;
         magnetTimer = 0;
@@ -238,32 +234,31 @@
         // Ground platform
         platforms.push({ x: 0, y: 580, w: 400, h: 20, dir: 0, speed: 0 });
 
-        // Build density
         for (let i = 1; i < PLATFORM_COUNT; i++) {
-          spawnPlatform(canvas.height - i * 80); // Closer vertical spacing
+          spawnPlatform(canvas.height - i * 100);
         }
       }
 
       function spawnPlatform(y) {
         const plat = {
-          x: Math.random() * 320,
+          x: Math.random() * 300,
           y: y,
-          w: 80,
+          w: 85,
           h: 18,
           dir: Math.random() < 0.5 ? -1 : 1,
-          speed: 1.0 + Math.random() * 1.0,
+          speed: 1.0 + Math.random() * 0.8,
         };
         platforms.push(plat);
-        trySpawnPowerUp(plat);
-      }
 
-      function trySpawnPowerUp(plat) {
-        if (Math.random() < 0.5) {
+        spawnCount++;
+        // Guaranteed every 5 platforms, otherwise 20% chance
+        if (spawnCount >= 5 || Math.random() < 0.2) {
           const types = ["shield", "slowmo", "magnet"];
           powerUps.push({
             type: types[Math.floor(Math.random() * types.length)],
             parent: plat,
           });
+          spawnCount = 0;
         }
       }
 
@@ -274,7 +269,7 @@
         }
         keys[e.code] = true;
         if (["Space", "KeyW", "ArrowUp"].includes(e.code) && player.onGround) {
-          player.dy = -11;
+          player.dy = -11.5;
           player.onGround = false;
           sfx(450, "square", 0.1);
         }
@@ -288,13 +283,26 @@
         else if (keys["ArrowRight"] || keys["KeyD"]) player.vx = 4.5;
         else player.vx = 0;
 
+        // Smart Lattice Logic
         if (magnetTimer > 0) {
           magnetTimer--;
+          // Find the single closest platform ABOVE the player
+          let targetPlat = null;
+          let minDist = 150;
+
           platforms.forEach((p) => {
-            if (Math.abs(player.y - p.y) < 80 && player.dy > 0) {
-              player.x += (p.x + p.w / 2 - player.w / 2 - player.x) * 0.12;
+            const distY = player.y - p.y;
+            if (distY > 0 && distY < minDist) {
+              targetPlat = p;
+              minDist = distY;
             }
           });
+
+          if (targetPlat && player.dy > -2) {
+            // Only pull when falling or near peak of jump
+            let targetX = targetPlat.x + targetPlat.w / 2 - player.w / 2;
+            player.x += (targetX - player.x) * 0.08; // Dampened pull
+          }
         }
 
         player.x += player.vx;
@@ -304,7 +312,7 @@
         }
         player.onGround = false;
 
-        let timeScale = slowMoTimer-- > 0 ? 0.4 : 1.0;
+        let timeScale = slowMoTimer-- > 0 ? 0.35 : 1.0;
 
         platforms.forEach((p, index) => {
           p.x += p.dir * p.speed * timeScale;
@@ -323,12 +331,21 @@
             player.x += p.dir * p.speed * timeScale;
           }
 
-          // RECYCLE FIX: Check against canvas height + buffer
           if (p.y > canvas.height + 20 && index !== 0) {
-            p.y -= RECYCLE_DISTANCE;
+            p.y -= 900;
             p.x = Math.random() * (canvas.width - p.w);
             powerUps = powerUps.filter((pu) => pu.parent !== p);
-            trySpawnPowerUp(p);
+
+            spawnCount++;
+            if (spawnCount >= 5 || Math.random() < 0.2) {
+              powerUps.push({
+                type: ["shield", "slowmo", "magnet"][
+                  Math.floor(Math.random() * 3)
+                ],
+                parent: p,
+              });
+              spawnCount = 0;
+            }
           }
         });
 
@@ -343,8 +360,8 @@
           ) {
             sfx(700, "sine", 0.15);
             if (pu.type === "shield") player.shielded = true;
-            if (pu.type === "slowmo") slowMoTimer = 450;
-            if (pu.type === "magnet") magnetTimer = 450;
+            if (pu.type === "slowmo") slowMoTimer = 500;
+            if (pu.type === "magnet") magnetTimer = 500;
             powerUps.splice(i, 1);
           }
         });
@@ -357,25 +374,12 @@
           platforms.forEach((p) => (p.y += diff));
         }
 
-        // Narrative milestones
-        let currentAlt = Math.floor(score / 10);
-        if (currentAlt >= 100 && lastMilestone < 100) {
-          commsEl.innerText = "[COMMS] DATA: FAYDRIC'S TOUCH REMAINS.";
-          lastMilestone = 100;
-        } else if (currentAlt >= 300 && lastMilestone < 300) {
-          commsEl.innerText = "[COMMS] WARN: ATMOSPHERIC THINNING.";
-          lastMilestone = 300;
-        } else if (currentAlt >= 600 && lastMilestone < 600) {
-          commsEl.innerText = "[COMMS] MEMORY: THE CORE IS STEADY.";
-          lastMilestone = 600;
-        }
-
         if (player.x > canvas.width) player.x = -player.w;
         if (player.x < -player.w) player.x = canvas.width;
 
         if (player.y > canvas.height + 50) {
           if (player.shielded) {
-            player.dy = -16;
+            player.dy = -17;
             player.shielded = false;
             sfx(600, "triangle", 0.2);
           } else die();
