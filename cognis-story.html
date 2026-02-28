@@ -2,125 +2,186 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cognis – The Soul of Invention</title>
-    <link rel="stylesheet" href="styles.css" />
+    <style>
+      :root {
+        --gold: #d4af37;
+        --teal: #00ffcc;
+        --bg: #0a0a0a;
+        --text: #c0c0c0;
+      }
+
+      body {
+        margin: 0;
+        background-color: var(--bg);
+        color: var(--text);
+        font-family: "Courier New", monospace;
+        line-height: 1.6;
+        display: flex;
+        justify-content: center;
+        padding: 40px 20px;
+      }
+
+      .content-container {
+        max-width: 700px;
+        background: rgba(20, 20, 20, 0.8);
+        padding: 50px;
+        border-left: 1px solid #333;
+        border-right: 1px solid #333;
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+      }
+
+      h1 {
+        color: var(--gold);
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        margin-bottom: 0;
+        text-align: center;
+      }
+
+      h2 {
+        font-style: italic;
+        font-weight: normal;
+        font-size: 1.1rem;
+        text-align: center;
+        margin-top: 5px;
+        margin-bottom: 40px;
+        opacity: 0.7;
+      }
+
+      p {
+        margin-bottom: 20px;
+        font-size: 1.05rem;
+      }
+
+      /* THE CLUES - Styled to be obvious but thematic */
+      .clue {
+        color: var(--teal);
+        font-weight: bold;
+        border-bottom: 1px dashed var(--teal);
+        cursor: help;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .clue:hover {
+        color: #fff;
+        background: rgba(0, 255, 204, 0.1);
+        text-shadow: 0 0 8px var(--teal);
+      }
+
+      /* Small tag that appears on hover */
+      .clue::after {
+        content: "FRAGMENT FOUND";
+        position: absolute;
+        bottom: -20px;
+        left: 0;
+        font-size: 0.6rem;
+        letter-spacing: 1px;
+        opacity: 0;
+        transition: 0.3s;
+      }
+
+      .clue:hover::after {
+        opacity: 1;
+      }
+
+      blockquote {
+        border-left: 3px solid var(--gold);
+        margin: 30px 0;
+        padding: 10px 20px;
+        font-style: italic;
+        background: rgba(212, 175, 55, 0.05);
+      }
+
+      .back-link {
+        display: block;
+        margin-top: 60px;
+        text-align: center;
+        color: var(--gold);
+        text-decoration: none;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 2px;
+        transition: 0.3s;
+      }
+
+      .back-link:hover {
+        letter-spacing: 4px;
+        text-shadow: 0 0 10px var(--gold);
+      }
+
+      hr {
+        border: 0;
+        border-top: 1px solid #333;
+        margin: 40px 0;
+      }
+    </style>
   </head>
   <body>
     <div class="content-container">
-      <h1>Cognis</h1>
-      <h2>The Soul of Invention</h2>
+      <header>
+        <h1>Cognis</h1>
+        <h2>The Soul of Invention</h2>
+      </header>
 
       <p>
         The halls of the Aether Conservatory buzzed with energy—arcane engines
         hummed behind stone walls, quills whispered across parchment, and
-        illusionary diagrams spun in midair. Among the lecture chambers and
-        levitating labs, one name passed from mouth to mouth:
+        illusionary diagrams spun in midair.
       </p>
 
       <p><strong>Faydric Tomaix.</strong></p>
 
       <p>
         He wasn't much to look at—lanky, too young, hands perpetually
-        ink-stained. But when he spoke, professors listened. When he drafted,
-        artificers copied. Students older than him turned pages in silence,
-        their pride quietly choking on his brilliance. At just twenty-one,
-        Faydric had already filed three patents with the Aetheric Invention
-        Registry and corrected a ten-year error in golemic sympathetic linkage
-        theory. Beneath one margin, he had scribbled
-        <span class="clue" title="Axiom">axiom-driven constructs</span>, noting
-        "require no handler, only clarity of thought." No one questioned whether
-        he would change the world. Only how long they’d have to wait.
+        ink-stained. But when he spoke, professors listened. Students older than
+        him turned pages in silence. Beneath one margin, he had scribbled
+        <span class="clue" title="The second part of the phrase">Axiom</span
+        >-driven constructs, noting "require no handler, only clarity of
+        thought."
       </p>
 
       <p>
-        But then came the shaking hands. Missed words. Equations that once
-        flowed like music now faltered on the page. Faydric said little—only
-        that it was “temporary.” Those close to him knew better.
-      </p>
-
-      <p>
-        Late one evening, as twilight drenched the Assembly in violet-blue,
-        Faydric stood before an arcanobiologist in a quiet consultation chamber.
+        But then came the shaking hands. Equations that once flowed like music
+        now faltered on the page. Faydric said little—only that it was
+        “temporary.”
       </p>
 
       <blockquote>
-        “Your neural lattice is unraveling,” the mage murmured, unable to meet
-        his gaze. “We don’t understand the source. Magical. Degenerative. You
-        have… months, maybe a few years of lucidity. I’m sorry.”
+        “Your neural lattice is unraveling,” the mage murmured. “You have…
+        months, maybe a few years of lucidity. I’m sorry.”
       </blockquote>
 
       <p>
-        Faydric didn’t speak. He simply stared at his reflection in the
-        silver-rimmed mirror behind the healer—eyes sharp, young, burning with
-        questions. Then he left.
+        Inside the old observatory dome, the prodigy labored in secret.
+        Schematics filled the walls—runes layered over mechanical joints and the
+        rarely taught principle of
+        <span class="clue" title="The first part of the phrase">Mody</span
+        >-Constructae.
       </p>
 
-      <p>He didn’t slow down.</p>
-
-      <p>
-        In the weeks that followed, lights flickered from beneath the old
-        observatory dome—abandoned for decades, now sealed from the inside.
-        Rumors grew. Faydric stopped attending lectures. He declined
-        appointments, missed presentations. But the hum of power from beneath
-        the dome grew stronger.
-      </p>
-
-      <p>
-        Inside, the prodigy labored in secret. Not to save his body—but to
-        preserve what truly mattered: his mind. Schematics filled the
-        walls—runes layered over mechanical joints, soul-threading rituals
-        paired with psionic extraction arrays, and the rarely taught principle
-        of
-        <span class="clue" title="Mody">Modus Constructae</span>.
-      </p>
-
-      <p>He named it Project Cognis.</p>
-
-      <p>
-        The construct shell stood tall in the moonlight, brass-limned and inert,
-        surrounded by an array of crystal memory cores. Its chest housed a
-        lattice of blue energy—an arcane synapse chamber tuned to one frequency:
-        Faydric’s own.
-      </p>
+      <p>He named it <strong>Project Cognis.</strong></p>
 
       <blockquote>
         "Cognition is continuity. If the mind persists, then so do I."
       </blockquote>
 
-      <p>
-        They found his body weeks later—slumped beside the transfer circle,
-        mouth parted, fingers curled around a broken focus crystal.
-      </p>
+      <hr />
 
-      <p>And the construct? Gone.</p>
-
-      <h2>Now</h2>
+      <h2>The Current Era</h2>
 
       <p>
         In the wilds beyond the city-states, rumors whisper of a cloaked figure
-        of brass and blue fire—a thing that speaks with a young man’s voice and
-        the weight of a scholar’s memory. Some say it builds marvels from scrap.
-        Others say it communes with spirits of lost knowledge. A few claim it
-        remembers who it was. In some remote camps, travelers claim it is a
-        living
-        <span class="clue" title="Artifact"><em>artifact</em></span
-        >, shaped not by hands, but by will—a relic with purpose.
+        of brass and blue fire. Travelers claim it is a living
+        <span class="clue" title="The third part of the phrase">Artifact</span>,
+        shaped not by hands, but by will—a relic with purpose.
       </p>
 
-      <p>He calls himself Cognis.</p>
+      <p>He does not sleep. He does not forget.</p>
 
-      <p>
-        He does not sleep. He does not forget. He studies still, refining the
-        line between soul and spark. Where he walks, machines bloom like iron
-        flowers, and questions hang heavier than answers.
-      </p>
-
-      <blockquote>
-        “Am I Faydric, or the echo of his ambition?”<br />
-        “Can memory become a soul… or only a shadow of one?”
-      </blockquote>
-
-      <p>He doesn't ask for pity. He just wants to know.</p>
+      <blockquote>“Am I Faydric, or the echo of his ambition?”</blockquote>
 
       <a class="back-link" href="index.html">← Return to Archive</a>
     </div>
