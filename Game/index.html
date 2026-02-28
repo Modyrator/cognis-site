@@ -10,22 +10,43 @@
         color: #d4af37;
         font-family: "Courier New", monospace;
         display: flex;
-        flex-direction: column;
         justify-content: center;
         align-items: center;
         height: 100vh;
         overflow: hidden;
+        gap: 20px;
+      }
+
+      /* LEGEND PANEL */
+      #legend {
+        width: 200px;
+        border: 1px solid #333;
+        padding: 20px;
+        background: rgba(10, 10, 10, 0.9);
+        font-size: 0.8rem;
+        line-height: 1.4;
+      }
+
+      .legend-item {
+        margin-bottom: 15px;
+      }
+      .color-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 5px;
       }
 
       /* CRT CONTAINER */
       #game-container {
         position: relative;
-        border: 2px solid #333;
+        border: 2px solid #444;
         overflow: hidden;
         background: #000;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 1);
       }
 
-      /* SCANLINE EFFECT */
       #game-container::after {
         content: " ";
         display: block;
@@ -36,47 +57,22 @@
         right: 0;
         background: linear-gradient(
             rgba(18, 16, 16, 0) 50%,
-            rgba(0, 0, 0, 0.25) 50%
+            rgba(0, 0, 0, 0.2) 50%
           ),
           linear-gradient(
             90deg,
-            rgba(255, 0, 0, 0.06),
-            rgba(0, 255, 0, 0.02),
-            rgba(0, 0, 255, 0.06)
+            rgba(255, 0, 0, 0.03),
+            rgba(0, 255, 0, 0.01),
+            rgba(0, 0, 255, 0.03)
           );
         z-index: 20;
         background-size: 100% 4px, 3px 100%;
         pointer-events: none;
       }
 
-      .crt-flicker {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(18, 16, 16, 0.1);
-        opacity: 0;
-        z-index: 21;
-        pointer-events: none;
-        animation: flicker 0.15s infinite;
-      }
-
-      @keyframes flicker {
-        0% {
-          opacity: 0.1;
-        }
-        50% {
-          opacity: 0.02;
-        }
-        100% {
-          opacity: 0.09;
-        }
-      }
-
       #game {
         display: block;
-        filter: contrast(1.2) brightness(1.1) saturate(1.2);
+        filter: contrast(1.1) brightness(1.1);
       }
 
       .ui-panel {
@@ -84,67 +80,134 @@
         top: 10px;
         left: 10px;
         z-index: 30;
-        text-shadow: 2px 2px #000;
+        pointer-events: none;
       }
 
-      #ability-bar {
+      /* STATUS MONITOR */
+      #status-display {
         position: absolute;
-        bottom: 10px;
-        right: 10px;
-        font-size: 0.7rem;
-        text-align: right;
+        bottom: 20px;
+        left: 20px;
         z-index: 30;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px;
+        border-left: 2px solid var(--gold);
+      }
+
+      .active-buff {
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 5px;
+        animation: pulse 1s infinite alternate;
+      }
+
+      @keyframes pulse {
+        from {
+          opacity: 0.4;
+        }
+        to {
+          opacity: 1;
+        }
       }
 
       .archive-btn {
-        margin-top: 20px;
-        padding: 10px 20px;
-        background: transparent;
+        position: absolute;
+        bottom: 20px;
+        right: -150px; /* Offset from center body */
+        padding: 10px;
         color: #d4af37;
         border: 1px solid #d4af37;
         text-decoration: none;
-        font-size: 0.8rem;
-        box-shadow: 0 0 5px #d4af37;
+        font-size: 0.7rem;
       }
     </style>
   </head>
   <body>
+    <div id="legend">
+      <h3 style="color: #fff; margin-top: 0">SYSTEM LOG</h3>
+      <div class="legend-item">
+        <strong>CONTROLS:</strong><br />
+        WASD or ARROWS<br />
+        SPACE to Jump
+      </div>
+      <hr style="border: 0; border-top: 1px solid #333" />
+      <div class="legend-item">
+        <span class="color-dot" style="background: #d4af37"></span>
+        <strong>AEGIS:</strong><br />Survival Shield.
+      </div>
+      <div class="legend-item">
+        <span class="color-dot" style="background: #00ffcc"></span>
+        <strong>BUFFER:</strong><br />Slows Time.
+      </div>
+      <div class="legend-item">
+        <span class="color-dot" style="background: #ff004c"></span>
+        <strong>LATTICE:</strong><br />Magnet Pull.
+      </div>
+    </div>
+
     <div id="game-container">
-      <div class="crt-flicker"></div>
       <div class="ui-panel">
-        <div>ASCENSION: <span id="currentScore">0</span>m</div>
+        <div style="font-size: 1.2rem">
+          ASCENSION: <span id="currentScore">0</span>m
+        </div>
         <div style="opacity: 0.6; font-size: 0.7rem">
           RECORD: <span id="highScore">0</span>m
         </div>
       </div>
-      <div id="ability-bar"></div>
+
+      <div id="status-display">
+        <div style="font-size: 0.6rem; opacity: 0.5">OVERCLOCK STATUS:</div>
+        <div id="active-list">NOMINAL</div>
+      </div>
+
       <canvas id="game"></canvas>
     </div>
-
-    <a href="../index.html" class="archive-btn">⮐ BACK TO ARCHIVE</a>
 
     <script>
       const canvas = document.getElementById("game");
       const ctx = canvas.getContext("2d");
       const scoreEl = document.getElementById("currentScore");
       const highEl = document.getElementById("highScore");
-      const abilityEl = document.getElementById("ability-bar");
+      const activeList = document.getElementById("active-list");
 
       canvas.width = 400;
       canvas.height = 600;
 
+      // Sound System
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      function playTone(freq, type, duration, vol = 0.1) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(
+          0.01,
+          audioCtx.currentTime + duration
+        );
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      }
+
+      const sounds = {
+        jump: () => playTone(400, "square", 0.1),
+        pickup: () => {
+          playTone(600, "sine", 0.1);
+          setTimeout(() => playTone(900, "sine", 0.1), 50);
+        },
+        death: () => {
+          playTone(200, "sawtooth", 0.3);
+          playTone(100, "sawtooth", 0.5);
+        },
+      };
+
       const playerSprite = new Image();
       playerSprite.src = "jumpyboy.png";
-
       const platformSprite = new Image();
       platformSprite.src = "platformyboy.png";
-
-      // Game Physics
-      const gravity = 0.4;
-      const jumpForce = -10;
-      const basePlatformSpeed = 1.5;
-      const platformGap = 100;
-      const platformCount = 8;
 
       let score = 0;
       let highScore = localStorage.getItem("cognis_highscore") || 0;
@@ -159,14 +222,12 @@
         vx: 0,
         onGround: false,
         shielded: false,
-        magnetized: false,
       };
-
-      let platforms = [];
-      let powerUps = [];
-      let keys = {};
-      let slowMoTimer = 0;
-      let magnetTimer = 0;
+      let platforms = [],
+        powerUps = [],
+        keys = {};
+      let slowMoTimer = 0,
+        magnetTimer = 0;
 
       function init() {
         score = 0;
@@ -176,30 +237,24 @@
         slowMoTimer = 0;
         magnetTimer = 0;
         player.shielded = false;
-        player.magnetized = false;
-
-        // Ground
         platforms.push({ x: 0, y: 580, w: 400, h: 20, dir: 0 });
-        for (let i = 1; i < platformCount; i++) {
-          spawnPlatform(canvas.height - i * platformGap);
-        }
+        for (let i = 1; i < 8; i++) spawnPlatform(canvas.height - i * 100);
       }
 
       function spawnPlatform(y) {
         const plat = {
-          x: Math.random() * (canvas.width - 70),
+          x: Math.random() * 330,
           y: y,
           w: 70,
           h: 15,
           dir: Math.random() < 0.5 ? -1 : 1,
         };
         platforms.push(plat);
-
-        // 15% chance to spawn a power-up on new platforms
-        if (Math.random() < 0.15) {
+        if (Math.random() < 0.35) {
+          // INCREASED PROBABILITY
           const types = ["shield", "slowmo", "magnet"];
           powerUps.push({
-            x: plat.x + plat.w / 2 - 8,
+            x: plat.x + 25,
             y: plat.y - 25,
             w: 16,
             h: 16,
@@ -211,139 +266,124 @@
 
       window.addEventListener("keydown", (e) => {
         keys[e.code] = true;
-        // Added W and Up Arrow for Jump alongside Space
         if (
           (e.code === "Space" || e.code === "KeyW" || e.code === "ArrowUp") &&
           player.onGround
         ) {
-          player.dy = jumpForce;
+          player.dy = -10;
           player.onGround = false;
+          sounds.jump();
         }
       });
       window.addEventListener("keyup", (e) => (keys[e.code] = false));
 
       function update() {
-        // WASD & Arrow Movement
         if (keys["ArrowLeft"] || keys["KeyA"]) player.vx = -4;
         else if (keys["ArrowRight"] || keys["KeyD"]) player.vx = 4;
         else player.vx = 0;
 
-        // Magnet Logic (Lattice Pull)
         if (magnetTimer > 0) {
           magnetTimer--;
-          player.magnetized = true;
           platforms.forEach((p) => {
-            if (Math.abs(player.y - p.y) < 60 && player.dy > 0) {
-              let centerX = p.x + p.w / 2 - player.w / 2;
-              player.x += (centerX - player.x) * 0.08;
+            if (Math.abs(player.y - p.y) < 70 && player.dy > 0) {
+              player.x += (p.x + p.w / 2 - player.w / 2 - player.x) * 0.1;
             }
           });
-        } else {
-          player.magnetized = false;
         }
 
         player.x += player.vx;
         if (!player.onGround) {
-          player.dy += gravity;
+          player.dy += 0.4;
           player.y += player.dy;
         }
-
         player.onGround = false;
 
-        // Platform Speed (Slow-mo check)
-        let currentSpeed = basePlatformSpeed;
-        if (slowMoTimer > 0) {
-          slowMoTimer--;
-          currentSpeed *= 0.4;
-        }
+        let speed = slowMoTimer-- > 0 ? 0.6 : 1.5;
 
         platforms.forEach((p) => {
-          p.x += p.dir * currentSpeed;
+          p.x += p.dir * speed;
           if (p.x <= 0 || p.x + p.w >= canvas.width) p.dir *= -1;
-
-          // Landing Detection
           if (
             player.dy >= 0 &&
             player.x + player.w > p.x &&
             player.x < p.x + p.w &&
             player.y + player.h >= p.y &&
-            player.y + player.h <= p.y + p.h + 10
+            player.y + player.h <= p.y + 15
           ) {
             player.y = p.y - player.h;
             player.dy = 0;
             player.onGround = true;
-            player.x += p.dir * currentSpeed;
+            player.x += p.dir * speed;
           }
-
           if (p.y > canvas.height) {
-            p.y -= platformCount * platformGap;
-            p.x = Math.random() * (canvas.width - p.w);
+            p.y -= 800;
+            p.x = Math.random() * 330;
           }
         });
 
-        // Power-up Collision
         powerUps.forEach((pu, i) => {
           pu.y = pu.parentPlat.y - 25;
-          pu.x = pu.parentPlat.x + pu.parentPlat.w / 2 - 8;
-
+          pu.x = pu.parentPlat.x + 25;
           if (
-            player.x < pu.x + pu.w &&
-            player.x + player.w > pu.x &&
-            player.y < pu.y + pu.h &&
-            player.y + player.h > pu.y
+            player.x < pu.x + 16 &&
+            player.x + 24 > pu.x &&
+            player.y < pu.y + 16 &&
+            player.y + 24 > pu.y
           ) {
+            sounds.pickup();
             if (pu.type === "shield") player.shielded = true;
             if (pu.type === "slowmo") slowMoTimer = 400;
             if (pu.type === "magnet") magnetTimer = 400;
-
             powerUps.splice(i, 1);
           }
         });
 
-        // Cleanup off-screen powerups
-        powerUps = powerUps.filter((pu) => pu.y < canvas.height);
-
-        // Scroll
-        if (player.y < canvas.height / 2) {
-          let diff = canvas.height / 2 - player.y;
-          player.y = canvas.height / 2;
+        if (player.y < 300) {
+          let diff = 300 - player.y;
+          player.y = 300;
           score += Math.floor(diff);
           scoreEl.innerText = Math.floor(score / 10);
           platforms.forEach((p) => (p.y += diff));
         }
 
-        // Wrap
-        if (player.x > canvas.width) player.x = -player.w;
-        if (player.x < -player.w) player.x = canvas.width;
+        if (player.x > canvas.width) player.x = -24;
+        if (player.x < -24) player.x = canvas.width;
 
-        // Death / Shield Check
         if (player.y > canvas.height + 50) {
           if (player.shielded) {
-            player.dy = -15; // Kinetic Aegis Bounce
+            player.dy = -15;
             player.shielded = false;
+            sounds.pickup();
           } else {
+            sounds.death();
             saveHighScore();
             resetGame();
           }
         }
 
-        // UI Text Update
-        let status = [];
+        // UI Monitor Logic
+        let active = [];
         if (player.shielded)
-          status.push("<span style='color:#d4af37'>[AEGIS]</span>");
+          active.push(
+            "<div class='active-buff' style='color:#d4af37'>[AEGIS_ACTIVE]</div>"
+          );
         if (slowMoTimer > 0)
-          status.push("<span style='color:#00ffcc'>[BUFFER]</span>");
+          active.push(
+            "<div class='active-buff' style='color:#00ffcc'>[BUFFER_ACTIVE]</div>"
+          );
         if (magnetTimer > 0)
-          status.push("<span style='color:#ff004c'>[LATTICE]</span>");
-        abilityEl.innerHTML = status.join("<br>");
+          active.push(
+            "<div class='active-buff' style='color:#ff004c'>[LATTICE_ACTIVE]</div>"
+          );
+        activeList.innerHTML = active.length ? active.join("") : "NOMINAL";
       }
 
       function saveHighScore() {
-        let finalScore = Math.floor(score / 10);
-        if (finalScore > highScore) {
-          highScore = finalScore;
-          localStorage.setItem("cognis_highscore", highScore);
-          highEl.innerText = highScore;
+        let s = Math.floor(score / 10);
+        if (s > highScore) {
+          highScore = s;
+          localStorage.setItem("cognis_highscore", s);
+          highEl.innerText = s;
         }
       }
 
@@ -355,41 +395,28 @@
       }
 
       function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Draw Platforms
-        platforms.forEach((p) => {
-          ctx.drawImage(platformSprite, p.x, p.y, p.w, p.h);
-        });
-
-        // Draw Powerups (Glowing Orbs)
+        ctx.clearRect(0, 0, 400, 600);
+        platforms.forEach((p) =>
+          ctx.drawImage(platformSprite, p.x, p.y, p.w, p.h)
+        );
         powerUps.forEach((pu) => {
-          ctx.shadowBlur = 10;
-          if (pu.type === "shield") ctx.shadowColor = ctx.fillStyle = "#d4af37";
-          if (pu.type === "slowmo") ctx.shadowColor = ctx.fillStyle = "#00ffcc";
-          if (pu.type === "magnet") ctx.shadowColor = ctx.fillStyle = "#ff004c";
+          ctx.fillStyle =
+            pu.type === "shield"
+              ? "#d4af37"
+              : pu.type === "slowmo"
+              ? "#00ffcc"
+              : "#ff004c";
           ctx.beginPath();
-          ctx.arc(pu.x + 8, pu.y + 8, 6, 0, Math.PI * 2);
+          ctx.arc(pu.x + 8, pu.y + 8, 8, 0, 7);
           ctx.fill();
-          ctx.shadowBlur = 0;
         });
-
-        // Draw Shield Aura if active
         if (player.shielded) {
           ctx.strokeStyle = "#d4af37";
           ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.arc(
-            player.x + player.w / 2,
-            player.y + player.h / 2,
-            22,
-            0,
-            Math.PI * 2
-          );
+          ctx.arc(player.x + 12, player.y + 12, 20, 0, 7);
           ctx.stroke();
         }
-
-        // Draw Player Sprite
         ctx.drawImage(playerSprite, player.x, player.y, player.w, player.h);
       }
 
@@ -399,16 +426,16 @@
         requestAnimationFrame(loop);
       }
 
-      let imagesLoaded = 0;
-      [playerSprite, platformSprite].forEach((img) => {
-        img.onload = () => {
-          imagesLoaded++;
-          if (imagesLoaded === 2) {
-            init();
-            loop();
-          }
-        };
-      });
+      let loaded = 0;
+      [playerSprite, platformSprite].forEach(
+        (i) =>
+          (i.onload = () => {
+            if (++loaded === 2) {
+              init();
+              loop();
+            }
+          })
+      );
     </script>
   </body>
 </html>
