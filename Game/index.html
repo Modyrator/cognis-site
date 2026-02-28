@@ -2,28 +2,28 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cognis – Ascension Trial</title>
     <style>
-      html,
       body {
         margin: 0;
-        padding: 0;
-        background: black;
-        overflow: hidden;
-        font-family: "Courier New", monospace;
+        background: #000;
         color: #d4af37;
-        height: 100%;
+        font-family: "Courier New", monospace;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      #game-container {
+        position: relative;
+        border: 2px solid #333;
       }
 
       canvas {
-        display: block;
-        margin: 0 auto;
         background: linear-gradient(#050505, #000);
-        border-left: 2px solid #333;
-        border-right: 2px solid #333;
-        /* Ensure the canvas is visible even if JS fails to load */
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        display: block;
       }
 
       .overlay {
@@ -32,38 +32,141 @@
         width: 100%;
         text-align: center;
         pointer-events: none;
-        text-shadow: 0 0 5px black;
-      }
-
-      .hint {
-        font-size: 0.8rem;
-        opacity: 0.6;
-      }
-
-      .back-link {
-        pointer-events: auto;
-        display: inline-block;
-        margin-top: 10px;
-        color: #888;
-        text-decoration: none;
-        font-size: 0.8rem;
-      }
-
-      .back-link:hover {
-        color: #d4af37;
       }
     </style>
   </head>
   <body>
-    <canvas id="game" width="400" height="600"></canvas>
-
-    <div class="overlay">
-      <h1>ASCENSION PROTOCOL</h1>
-      <p>Wait. Jump. Persist.</p>
-      <p class="hint">SPACE to jump | ARROWS to move</p>
-      <a class="back-link" href="../index.html">⮐ Return to Archive</a>
+    <div id="game-container">
+      <div class="overlay">
+        <h2 style="margin: 0">ASCENSION PROTOCOL</h2>
+        <p style="font-size: 0.8rem">LEFT / RIGHT to move | SPACE to jump</p>
+      </div>
+      <canvas id="game"></canvas>
     </div>
 
-    <script src="game.js"></script>
+    <script>
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+
+      // 1. HARD-SET DIMENSIONS (Important!)
+      canvas.width = 400;
+      canvas.height = 600;
+
+      const gravity = 0.4;
+      const jumpForce = -12;
+      const platformSpeed = 1.5;
+      const platformGap = 90;
+      const platformCount = 8;
+
+      let player = {
+        x: 200,
+        y: 500,
+        w: 20,
+        h: 20,
+        dy: 0,
+        vx: 0,
+      };
+
+      let platforms = [];
+      let keys = {};
+
+      function init() {
+        platforms = [];
+        // Ground platform
+        platforms.push({ x: 0, y: 580, w: 400, h: 20, dir: 0 });
+
+        for (let i = 1; i < platformCount; i++) {
+          spawnPlatform(canvas.height - i * platformGap);
+        }
+      }
+
+      function spawnPlatform(y) {
+        platforms.push({
+          x: Math.random() * 340,
+          y: y,
+          w: 60,
+          h: 10,
+          dir: Math.random() < 0.5 ? -1 : 1,
+        });
+      }
+
+      window.addEventListener("keydown", (e) => (keys[e.code] = true));
+      window.addEventListener("keyup", (e) => (keys[e.code] = false));
+
+      function update() {
+        // Horizontal movement
+        if (keys["ArrowLeft"]) player.vx = -4;
+        else if (keys["ArrowRight"]) player.vx = 4;
+        else player.vx = 0;
+
+        player.x += player.vx;
+        player.dy += gravity;
+        player.y += player.dy;
+
+        // Platform logic & Collision
+        platforms.forEach((p) => {
+          // Move platforms
+          p.x += p.dir * platformSpeed;
+          if (p.x <= 0 || p.x + p.w >= canvas.width) p.dir *= -1;
+
+          // Collision (falling down only)
+          if (
+            player.dy > 0 &&
+            player.x + player.w > p.x &&
+            player.x < p.x + p.w &&
+            player.y + player.h >= p.y &&
+            player.y + player.h <= p.y + p.h + player.dy
+          ) {
+            player.y = p.y - player.h;
+            player.dy = jumpForce; // Auto-jump
+          }
+
+          // Recycle platforms
+          if (p.y > canvas.height) {
+            p.y = 0;
+            p.x = Math.random() * (canvas.width - p.w);
+          }
+        });
+
+        // Camera Scroll
+        if (player.y < canvas.height / 2) {
+          let diff = canvas.height / 2 - player.y;
+          player.y = canvas.height / 2;
+          platforms.forEach((p) => (p.y += diff));
+        }
+
+        // Screen Wrap
+        if (player.x > canvas.width) player.x = -player.w;
+        if (player.x < -player.w) player.x = canvas.width;
+
+        // Death/Reset
+        if (player.y > canvas.height + 100) {
+          player.y = 500;
+          player.dy = 0;
+          init();
+        }
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Platforms
+        ctx.fillStyle = "#d4af37";
+        platforms.forEach((p) => ctx.fillRect(p.x, p.y, p.w, p.h));
+
+        // Draw Player
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(player.x, player.y, player.w, player.h);
+      }
+
+      function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      init();
+      loop();
+    </script>
   </body>
 </html>
