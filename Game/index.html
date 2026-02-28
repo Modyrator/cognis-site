@@ -88,6 +88,15 @@
         text-shadow: 0 0 5px currentColor;
       }
 
+      #comms-text {
+        font-size: 0.6rem;
+        color: #00ffcc;
+        margin-top: 10px;
+        border-top: 1px solid #222;
+        padding-top: 5px;
+        min-height: 20px;
+      }
+
       #game-over {
         position: absolute;
         top: 0;
@@ -143,6 +152,7 @@
           SYSTEM_OVERCLOCK:
         </div>
         <div id="active-list">STABLE</div>
+        <div id="comms-text">LINK_ESTABLISHED...</div>
       </div>
 
       <div id="game-over">
@@ -160,6 +170,7 @@
       const scoreEl = document.getElementById("currentScore");
       const highEl = document.getElementById("highScore");
       const activeList = document.getElementById("active-list");
+      const commsEl = document.getElementById("comms-text");
       const gameOverScreen = document.getElementById("game-over");
 
       canvas.width = 400;
@@ -168,6 +179,7 @@
       // Audio Engine
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       function sfx(f, t, d, v = 0.1) {
+        if (audioCtx.state === "suspended") audioCtx.resume();
         const o = audioCtx.createOscillator();
         const g = audioCtx.createGain();
         o.type = t;
@@ -196,14 +208,17 @@
         isGameOver = false;
       let slowMoTimer = 0,
         magnetTimer = 0;
+      let lastMilestone = 0;
 
       function init() {
         score = 0;
         scoreEl.innerText = 0;
+        lastMilestone = 0;
         isGameOver = false;
         gameOverScreen.style.display = "none";
         slowMoTimer = 0;
         magnetTimer = 0;
+        commsEl.innerText = "LINK_ESTABLISHED...";
         player = {
           x: 185,
           y: 500,
@@ -217,8 +232,8 @@
         platforms = [];
         powerUps = [];
 
-        // Fixed base platform
-        platforms.push({ x: 0, y: 580, w: 400, h: 20, dir: 0, speedMult: 0 });
+        // Fixed base platform (Index 0)
+        platforms.push({ x: 0, y: 580, w: 400, h: 20, dir: 0, speed: 0 });
 
         // Build initial climb
         for (let i = 1; i < 8; i++) {
@@ -238,12 +253,10 @@
         platforms.push(plat);
 
         if (Math.random() < 0.5) {
-          // 50% SPAWN RATE
           const types = ["shield", "slowmo", "magnet"];
           powerUps.push({
             type: types[Math.floor(Math.random() * types.length)],
             parent: plat,
-            offset: 30, // Horizontal offset from platform center
           });
         }
       }
@@ -270,7 +283,7 @@
         else if (keys["ArrowRight"] || keys["KeyD"]) player.vx = 4.5;
         else player.vx = 0;
 
-        // Lattice Logic
+        // Lattice Logic (Magnet)
         if (magnetTimer > 0) {
           magnetTimer--;
           platforms.forEach((p) => {
@@ -289,7 +302,7 @@
 
         let timeScale = slowMoTimer-- > 0 ? 0.4 : 1.0;
 
-        platforms.forEach((p) => {
+        platforms.forEach((p, index) => {
           p.x += p.dir * p.speed * timeScale;
           if (p.x <= 0 || p.x + p.w >= canvas.width) p.dir *= -1;
 
@@ -307,25 +320,23 @@
             player.x += p.dir * p.speed * timeScale;
           }
 
-          // Recycle Logic (Improved Stability)
-          if (p.y > canvas.height) {
-            p.y -= 880; // Total vertical spread
+          // THE FIX: Do not recycle index 0 (the ground)
+          if (p.y > canvas.height && index !== 0) {
+            p.y -= 880;
             p.x = Math.random() * (canvas.width - p.w);
-            // Clear old powerups for this plat
             powerUps = powerUps.filter((pu) => pu.parent !== p);
-            // Chance for new powerup on recycle
             if (Math.random() < 0.5) {
               powerUps.push({
                 type: ["shield", "slowmo", "magnet"][
                   Math.floor(Math.random() * 3)
                 ],
                 parent: p,
-                offset: 30,
               });
             }
           }
         });
 
+        // Power-up Collision
         powerUps.forEach((pu, i) => {
           let px = pu.parent.x + pu.parent.w / 2 - 8;
           let py = pu.parent.y - 25;
@@ -350,6 +361,19 @@
           score += Math.floor(diff);
           scoreEl.innerText = Math.floor(score / 10);
           platforms.forEach((p) => (p.y += diff));
+        }
+
+        // Milestone Comms
+        let currentAltitude = Math.floor(score / 10);
+        if (currentAltitude >= 100 && lastMilestone < 100) {
+          commsEl.innerText = "[COMMS] DATA: FAYDRIC'S TOUCH REMAINS.";
+          lastMilestone = 100;
+        } else if (currentAltitude >= 300 && lastMilestone < 300) {
+          commsEl.innerText = "[COMMS] WARN: ATMOSPHERIC THINNING.";
+          lastMilestone = 300;
+        } else if (currentAltitude >= 600 && lastMilestone < 600) {
+          commsEl.innerText = "[COMMS] MEMORY: THE CORE IS STEADY.";
+          lastMilestone = 600;
         }
 
         // Screen Wrap
