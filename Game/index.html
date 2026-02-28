@@ -6,7 +6,7 @@
     <style>
       body {
         margin: 0;
-        background: #000;
+        background: #050505;
         color: #d4af37;
         font-family: "Courier New", monospace;
         display: flex;
@@ -17,68 +17,97 @@
         overflow: hidden;
       }
 
+      /* CRT CONTAINER */
       #game-container {
         position: relative;
         border: 2px solid #333;
+        overflow: hidden;
+        background: #000;
       }
 
-      canvas {
-        background: linear-gradient(#050505, #000);
+      /* SCANLINE EFFECT */
+      #game-container::after {
+        content: " ";
         display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background: linear-gradient(
+            rgba(18, 16, 16, 0) 50%,
+            rgba(0, 0, 0, 0.25) 50%
+          ),
+          linear-gradient(
+            90deg,
+            rgba(255, 0, 0, 0.06),
+            rgba(0, 255, 0, 0.02),
+            rgba(0, 0, 255, 0.06)
+          );
+        z-index: 20;
+        background-size: 100% 4px, 3px 100%;
+        pointer-events: none;
       }
 
-      /* Score UI */
+      /* FLICKER ANIMATION */
+      .crt-flicker {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(18, 16, 16, 0.1);
+        opacity: 0;
+        z-index: 21;
+        pointer-events: none;
+        animation: flicker 0.15s infinite;
+      }
+
+      @keyframes flicker {
+        0% {
+          opacity: 0.1;
+        }
+        50% {
+          opacity: 0.02;
+        }
+        100% {
+          opacity: 0.09;
+        }
+      }
+
+      #game {
+        display: block;
+        filter: contrast(1.2) brightness(1.1) saturate(1.2);
+      }
+
       .ui-panel {
         position: absolute;
         top: 10px;
         left: 10px;
-        text-align: left;
-        pointer-events: none;
-        font-size: 0.9rem;
-        z-index: 10;
-      }
-
-      .overlay {
-        position: absolute;
-        top: 20px;
-        width: 100%;
-        text-align: center;
-        pointer-events: none;
+        z-index: 30;
+        text-shadow: 2px 2px #000;
       }
 
       .archive-btn {
         margin-top: 20px;
         padding: 10px 20px;
         background: transparent;
-        color: #888;
-        border: 1px solid #444;
-        font-family: inherit;
-        cursor: pointer;
+        color: #d4af37;
+        border: 1px solid #d4af37;
         text-decoration: none;
         font-size: 0.8rem;
-        transition: 0.3s;
-      }
-
-      .archive-btn:hover {
-        color: #d4af37;
-        border-color: #d4af37;
-        background: rgba(212, 175, 55, 0.1);
+        box-shadow: 0 0 5px #d4af37;
       }
     </style>
   </head>
   <body>
     <div id="game-container">
+      <div class="crt-flicker"></div>
       <div class="ui-panel">
         <div>ASCENSION: <span id="currentScore">0</span>m</div>
         <div style="opacity: 0.6; font-size: 0.7rem">
           RECORD: <span id="highScore">0</span>m
         </div>
-      </div>
-
-      <div class="overlay">
-        <h2 style="margin: 0; font-size: 1rem; opacity: 0.4">
-          ASCENSION PROTOCOL
-        </h2>
       </div>
       <canvas id="game"></canvas>
     </div>
@@ -94,6 +123,18 @@
       canvas.width = 400;
       canvas.height = 600;
 
+      /* =====================
+           SPRITE DEFINITIONS
+        ===================== */
+      // Change these URLs to your own image paths!
+      const playerSprite = new Image();
+      playerSprite.src = "https://via.placeholder.com/20/FFFFFF/000000?text=P";
+
+      const platformSprite = new Image();
+      platformSprite.src =
+        "https://via.placeholder.com/70x10/D4AF37/000000?text=PLAT";
+
+      // Game State
       const gravity = 0.4;
       const jumpForce = -10;
       const platformSpeed = 1.5;
@@ -107,8 +148,8 @@
       let player = {
         x: 190,
         y: 500,
-        w: 20,
-        h: 20,
+        w: 24,
+        h: 24,
         dy: 0,
         vx: 0,
         onGround: false,
@@ -120,7 +161,6 @@
         score = 0;
         scoreEl.innerText = score;
         platforms = [];
-        // Ground
         platforms.push({ x: 0, y: 580, w: 400, h: 20, dir: 0 });
         for (let i = 1; i < platformCount; i++) {
           spawnPlatform(canvas.height - i * platformGap);
@@ -132,7 +172,7 @@
           x: Math.random() * (canvas.width - 70),
           y: y,
           w: 70,
-          h: 10,
+          h: 15,
           dir: Math.random() < 0.5 ? -1 : 1,
         });
       }
@@ -152,7 +192,6 @@
         else player.vx = 0;
 
         player.x += player.vx;
-
         if (!player.onGround) {
           player.dy += gravity;
           player.y += player.dy;
@@ -183,15 +222,11 @@
           }
         });
 
-        // Camera Scroll & Score Calculation
         if (player.y < canvas.height / 2) {
           let diff = canvas.height / 2 - player.y;
           player.y = canvas.height / 2;
-
-          // Add to score based on distance climbed
           score += Math.floor(diff);
-          scoreEl.innerText = Math.floor(score / 10); // Display as simplified meters
-
+          scoreEl.innerText = Math.floor(score / 10);
           platforms.forEach((p) => (p.y += diff));
         }
 
@@ -222,13 +257,14 @@
 
       function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#d4af37";
-        platforms.forEach((p) => ctx.fillRect(p.x, p.y, p.w, p.h));
-        ctx.fillStyle = "#fff";
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "#fff";
-        ctx.fillRect(player.x, player.y, player.w, player.h);
-        ctx.shadowBlur = 0;
+
+        // Draw Platforms Sprite
+        platforms.forEach((p) => {
+          ctx.drawImage(platformSprite, p.x, p.y, p.w, p.h);
+        });
+
+        // Draw Player Sprite
+        ctx.drawImage(playerSprite, player.x, player.y, player.w, player.h);
       }
 
       function loop() {
@@ -237,8 +273,17 @@
         requestAnimationFrame(loop);
       }
 
-      init();
-      loop();
+      // Wait for images to load before starting
+      let imagesLoaded = 0;
+      [playerSprite, platformSprite].forEach((img) => {
+        img.onload = () => {
+          imagesLoaded++;
+          if (imagesLoaded === 2) {
+            init();
+            loop();
+          }
+        };
+      });
     </script>
   </body>
 </html>
