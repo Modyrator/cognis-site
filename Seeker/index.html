@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>73RRA – SIGNAL_SEEKER: SENTINEL_EYE</title>
+    <title>73RRA – SIGNAL_SEEKER: URBAN_RECON</title>
     <style>
       body {
         margin: 0;
@@ -10,289 +10,318 @@
         color: #00ffcc;
         font-family: "Courier New", monospace;
         display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
         height: 100vh;
         overflow: hidden;
       }
-      #game-wrapper {
+      /* Sidebar for Logs */
+      #sidebar {
+        width: 300px;
+        border-left: 1px solid #1a1a1a;
+        background: rgba(0, 5, 5, 0.95);
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        box-shadow: -10px 0 20px rgba(0, 0, 0, 0.5);
+      }
+      #log-header {
+        font-size: 12px;
+        color: #fff;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #333;
+        padding-bottom: 5px;
+      }
+      #log-content {
+        flex-grow: 1;
+        overflow-y: auto;
+        font-size: 11px;
+        color: #666;
+        line-height: 1.6;
+      }
+      #log-content span {
+        display: block;
+        margin-bottom: 12px;
+        border-left: 2px solid #00ffcc;
+        padding-left: 10px;
+        color: #aaa;
+      }
+
+      #game-container {
         position: relative;
-        border: 2px solid #1a1a1a;
-        cursor: none;
+        flex-grow: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #000;
       }
       canvas {
-        display: block;
+        border: 1px solid #1a1a1a;
         background: #000;
-        transition: filter 0.1s;
+        cursor: none;
       }
-      #ui {
+
+      #ui-overlay {
         position: absolute;
-        top: 15px;
-        left: 15px;
+        top: 20px;
+        left: 20px;
         pointer-events: none;
         text-transform: uppercase;
         font-size: 11px;
         letter-spacing: 2px;
-        line-height: 1.5;
         text-shadow: 0 0 5px #00ffcc;
       }
-      /* Back Button Styling */
       #exit-btn {
         position: absolute;
-        top: 15px;
-        right: 15px;
-        padding: 5px 12px;
+        top: 20px;
+        right: 20px;
+        padding: 6px 14px;
         border: 1px solid #333;
-        background: rgba(0, 0, 0, 0.6);
+        background: rgba(0, 0, 0, 0.8);
         color: #555;
         font-size: 10px;
         text-decoration: none;
-        letter-spacing: 1px;
-        transition: all 0.3s ease;
         z-index: 100;
-        text-transform: uppercase;
       }
       #exit-btn:hover {
         color: #fff;
-        border-color: #ff004c;
-        background: rgba(255, 0, 76, 0.1);
-        box-shadow: 0 0 10px rgba(255, 0, 76, 0.3);
-        text-shadow: 1px 0 #00ffff, -1px 0 #ff004c;
+        border-color: #00ffcc;
       }
       #terminal {
         position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 50px;
-        background: rgba(5, 5, 5, 0.9);
-        border-top: 1px solid #333;
-        padding: 15px;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid #1a1a1a;
+        padding: 10px;
         font-size: 12px;
-        color: #444;
-      }
-      .alert {
-        color: #ff004c;
-        text-shadow: 0 0 8px #ff004c;
-        font-weight: bold;
-      }
-      #overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        background: repeating-linear-gradient(
-          0deg,
-          rgba(0, 0, 0, 0.1) 0px,
-          rgba(0, 0, 0, 0.1) 1px,
-          transparent 2px
-        );
+        color: #00ffcc;
       }
     </style>
   </head>
   <body>
-    <div id="game-wrapper">
-      <div id="ui">
-        Sync_Stability: [<span id="sync-percent">0</span>%]<br />
-        Signal_Depth: <span id="dist-read">---</span><br />
-        Threat_Level: <span id="threat">LOW</span>
+    <div id="game-container">
+      <div id="ui-overlay">
+        NODES_SECURED: <span id="score">0</span><br />
+        SYNC: <span id="sync">0</span>%<br />
+        COORDS: <span id="coords">0,0</span>
       </div>
-      <a href="../index.html" id="exit-btn">DISCONNECT_UPLINK [ESC]</a>
-
-      <div id="overlay"></div>
+      <a href="../index.html" id="exit-btn">DISCONNECT [ESC]</a>
       <canvas id="radarCanvas"></canvas>
       <div id="terminal">
-        > RECEIVER INITIALIZED. FIND THE ECHO. STAY STEADY.
+        > SYSTEM_READY: SEARCHING FOR RESIDUAL DATA NODES...
       </div>
     </div>
 
+    <div id="sidebar">
+      <div id="log-header">RECOVERED_LOGS.db</div>
+      <div id="log-content" id="log-scroll"></div>
+    </div>
+
     <script>
-      const canvas = document.getElementById("radarCanvas");
-      const ctx = canvas.getContext("2d");
-      const term = document.getElementById("terminal");
-      const syncEl = document.getElementById("sync-percent");
-      const distEl = document.getElementById("dist-read");
-      const threatEl = document.getElementById("threat");
-
-      canvas.width = 750;
-      canvas.height = 500;
-
-      let audioCtx, oscillator, gainNode, noiseGain;
-
-      function initAudio() {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        oscillator = audioCtx.createOscillator();
-        gainNode = audioCtx.createGain();
-
-        const bufferSize = 2 * audioCtx.sampleRate,
-          noiseBuffer = audioCtx.createBuffer(
-            1,
-            bufferSize,
-            audioCtx.sampleRate
-          ),
-          output = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          output[i] = Math.random() * 2 - 1;
-        }
-
-        const noiseNode = audioCtx.createBufferSource();
-        noiseNode.buffer = noiseBuffer;
-        noiseNode.loop = true;
-        noiseGain = audioCtx.createGain();
-        noiseGain.gain.value = 0;
-
-        noiseNode.connect(noiseGain);
-        noiseGain.connect(audioCtx.destination);
-        noiseNode.start();
-
-        oscillator.type = "sine";
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        gainNode.gain.value = 0;
-        oscillator.start();
-      }
-
-      let mouse = { x: 375, y: 250 };
-      let signal = { x: Math.random() * 650 + 50, y: Math.random() * 400 + 50 };
-      let sync = 0,
-        discovered = false,
-        pulseRadius = 0;
-      let interferenceZones = [
-        { x: 100, y: 100, r: 90, dx: 1.2, dy: 0.8, chasing: false },
-        { x: 600, y: 400, r: 70, dx: -0.8, dy: 1.5, chasing: false },
+      // --- EDIT YOUR LOG MESSAGES HERE ---
+      const memoryLogs = [
+        "The automated sprinklers in Sector 4 are still running. They are watering plastic flowers.",
+        "A recording found in a nursery: 'Don't be afraid of the Buzz3rs, they are just birds with metal hearts.'",
+        "Factory Log: Production of 'Human Companions' reached 0. Machines continued building them for 30 years.",
+        "Archive: The last human message was a request for more light.",
+        "Found a digital photo: A group of people smiling. The metadata says 'Summer 2091'. It is the only copy left.",
+        "Sensors detected a piano playing in a ruined theater. It was just the wind hitting the strings.",
+        "A maintenance bot was found trying to repair a statue. It didn't realize stone cannot be healed.",
       ];
 
+      const canvas = document.getElementById("radarCanvas");
+      const ctx = canvas.getContext("2d");
+      const logContent = document.getElementById("log-content");
+      const scoreEl = document.getElementById("score");
+      const syncEl = document.getElementById("sync");
+      const coordsEl = document.getElementById("coords");
+
+      canvas.width = 800;
+      canvas.height = 600;
+
+      const WORLD_SIZE = 2000;
+      let score = 0,
+        sync = 0,
+        discovered = false;
+      let camX = 0,
+        camY = 0;
+      let mouse = { x: 400, y: 300 }; // Viewport pos
+      let worldMouse = { x: 400, y: 300 }; // World pos
+
+      // Obstacles (Buildings)
+      const buildings = [];
+      for (let i = 0; i < 40; i++) {
+        buildings.push({
+          x: Math.random() * (WORLD_SIZE - 200) + 100,
+          y: Math.random() * (WORLD_SIZE - 200) + 100,
+          w: Math.random() * 100 + 50,
+          h: Math.random() * 100 + 50,
+        });
+      }
+
+      let signal = { x: 1000, y: 1000 };
+      let seekers = [];
+      for (let i = 0; i < 10; i++) {
+        seekers.push({
+          x: Math.random() * WORLD_SIZE,
+          y: Math.random() * WORLD_SIZE,
+          r: 15,
+          vx: Math.random() - 0.5,
+          vy: Math.random() - 0.5,
+        });
+      }
+
+      function isColliding(nx, ny, w, h) {
+        return buildings.some(
+          (b) =>
+            nx < b.x + b.w && nx + w > b.x && ny < b.y + b.h && ny + h > b.y
+        );
+      }
+
       canvas.addEventListener("mousemove", (e) => {
-        if (!audioCtx) initAudio();
         const rect = canvas.getBoundingClientRect();
         mouse.x = e.clientX - rect.left;
         mouse.y = e.clientY - rect.top;
       });
 
-      // Keyboard support for back button
       window.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") window.location.href = "index.html";
+        if (e.key === "Escape") window.location.href = "../index.html";
       });
 
-      function draw() {
-        ctx.fillStyle = "rgba(2, 5, 5, 0.25)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        const distance = Math.sqrt(
-          (mouse.x - signal.x) ** 2 + (mouse.y - signal.y) ** 2
-        );
-        let inInterference = false;
-
-        interferenceZones.forEach((z) => {
-          if (sync > 50) {
-            z.chasing = true;
-            z.x += (mouse.x - z.x) * 0.012;
-            z.y += (mouse.y - z.y) * 0.012;
-            threatEl.innerHTML =
-              '<span class="alert">HIGH (SENTINEL_DETECTED)</span>';
-          } else {
-            z.chasing = false;
-            z.x += z.dx;
-            z.y += z.dy;
-            if (z.x < 0 || z.x > canvas.width) z.dx *= -1;
-            if (z.y < 0 || z.y > canvas.height) z.dy *= -1;
-            threatEl.innerText = "LOW";
-          }
-
-          let distToZ = Math.sqrt((mouse.x - z.x) ** 2 + (mouse.y - z.y) ** 2);
-          if (distToZ < z.r) inInterference = true;
-
-          ctx.strokeStyle = z.chasing
-            ? `rgba(255, 0, 76, ${0.2 * (pulseRadius / 450)})`
-            : `rgba(100, 100, 100, 0.1)`;
-          ctx.setLineDash([5, 5]);
-          ctx.beginPath();
-          ctx.arc(z.x, z.y, z.r, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.setLineDash([]);
-        });
-
-        if (audioCtx) {
-          let volume = inInterference ? 0.01 : Math.max(0, 1 - distance / 400);
-          let pitch = 200 + (1 - distance / 800) * 1000;
-          gainNode.gain.setTargetAtTime(
-            volume * 0.15,
-            audioCtx.currentTime,
-            0.1
-          );
-          oscillator.frequency.setTargetAtTime(
-            pitch,
-            audioCtx.currentTime,
-            0.1
-          );
-          oscillator.type = sync > 50 ? "sawtooth" : "sine";
-          noiseGain.gain.setTargetAtTime(
-            inInterference ? 0.3 : sync / 400,
-            audioCtx.currentTime,
-            0.1
-          );
-        }
-
-        if (inInterference) {
-          sync = Math.max(0, sync - 1.2);
-          canvas.style.filter = `hue-rotate(${
-            Math.random() * 90
-          }deg) brightness(1.5)`;
-          term.innerHTML = `<span class="alert">> CRITICAL: AMS_SENTINEL OVERRIDE IN PROGRESS...</span>`;
-        } else {
-          canvas.style.filter = `none`;
-          if (distance < 30 && !discovered) {
-            sync = Math.min(100, sync + 0.35);
-            if (sync >= 100) {
-              discovered = true;
-              term.innerHTML = `<span style="color:#00ffcc">> ECHO_STABILIZED: ${
-                [
-                  "'I remember the rain...'",
-                  "'The factory is so cold now.'",
-                  "'Why did they leave?'",
-                ][Math.floor(Math.random() * 3)]
-              }</span>`;
-              setTimeout(resetSignal, 4000);
-            }
-          } else if (!discovered) {
-            sync = Math.max(0, sync - 0.05);
-          }
-        }
-
-        syncEl.innerText = Math.floor(sync);
-        distEl.innerText = inInterference
-          ? "SIGNAL_BLOCKED"
-          : Math.floor(distance) + "u";
-
-        pulseRadius = (pulseRadius + 3) % 450;
-        ctx.strokeStyle = inInterference
-          ? `rgba(255, 0, 76, ${1 - pulseRadius / 450})`
-          : `rgba(0, 255, 204, ${1 - pulseRadius / 450})`;
-        ctx.beginPath();
-        ctx.arc(mouse.x, mouse.y, pulseRadius, 0, Math.PI * 2);
-        ctx.stroke();
-
-        ctx.strokeStyle = inInterference ? "#ff004c" : "#00ffcc";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(mouse.x - 15, mouse.y - 15, 30, 30);
-        ctx.beginPath();
-        ctx.moveTo(mouse.x - 25, mouse.y);
-        ctx.lineTo(mouse.x + 25, mouse.y);
-        ctx.moveTo(mouse.x, mouse.y - 25);
-        ctx.lineTo(mouse.x, mouse.y + 25);
-        ctx.stroke();
-
-        requestAnimationFrame(draw);
+      function addLog() {
+        const msg = memoryLogs[score % memoryLogs.length];
+        const span = document.createElement("span");
+        span.innerText = `> ${msg}`;
+        logContent.prepend(span);
       }
 
-      function resetSignal() {
-        signal = { x: Math.random() * 650 + 50, y: Math.random() * 400 + 50 };
-        sync = 0;
-        discovered = false;
-        term.innerText = "> SCANNING FOR NEW RESIDUAL MEMORY...";
+      function update() {
+        // Camera smooth follow
+        worldMouse.x += (mouse.x + camX - worldMouse.x) * 0.1;
+        worldMouse.y += (mouse.y + camY - worldMouse.y) * 0.1;
+
+        // Simple collision for player
+        if (isColliding(worldMouse.x - 5, worldMouse.y - 5, 10, 10)) {
+          // bounce back logic omitted for simplicity, but we prevent movement through walls
+        }
+
+        camX = worldMouse.x - canvas.width / 2;
+        camY = worldMouse.y - canvas.height / 2;
+
+        coordsEl.innerText = `${Math.floor(worldMouse.x)},${Math.floor(
+          worldMouse.y
+        )}`;
+
+        // Signal Logic
+        const dist = Math.sqrt(
+          (worldMouse.x - signal.x) ** 2 + (worldMouse.y - signal.y) ** 2
+        );
+        if (dist < 50 && !discovered) {
+          sync = Math.min(100, sync + 1.5); // Fast scan
+          if (sync >= 100) {
+            score++;
+            scoreEl.innerText = score;
+            addLog();
+            discovered = true;
+            setTimeout(() => {
+              signal = {
+                x: Math.random() * WORLD_SIZE,
+                y: Math.random() * WORLD_SIZE,
+              };
+              sync = 0;
+              discovered = false;
+            }, 2000);
+          }
+        } else {
+          sync = Math.max(0, sync - 0.5);
+        }
+        syncEl.innerText = Math.floor(sync);
+
+        // Seekers logic
+        seekers.forEach((s) => {
+          let nextX = s.x + s.vx;
+          let nextY = s.y + s.vy;
+          if (
+            nextX < 0 ||
+            nextX > WORLD_SIZE ||
+            isColliding(nextX - 5, nextY - 5, 10, 10)
+          )
+            s.vx *= -1;
+          if (
+            nextY < 0 ||
+            nextY > WORLD_SIZE ||
+            isColliding(nextX - 5, nextY - 5, 10, 10)
+          )
+            s.vy *= -1;
+          s.x += s.vx;
+          s.y += s.vy;
+
+          // Detection
+          let d = Math.sqrt(
+            (worldMouse.x - s.x) ** 2 + (worldMouse.y - s.y) ** 2
+          );
+          if (d < 40) sync = Math.max(0, sync - 5);
+        });
+      }
+
+      function draw() {
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.save();
+        ctx.translate(-camX, -camY);
+
+        // Grid
+        ctx.strokeStyle = "#0a1a1a";
+        for (let i = 0; i <= WORLD_SIZE; i += 100) {
+          ctx.beginPath();
+          ctx.moveTo(i, 0);
+          ctx.lineTo(i, WORLD_SIZE);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(0, i);
+          ctx.lineTo(WORLD_SIZE, i);
+          ctx.stroke();
+        }
+
+        // Buildings
+        ctx.strokeStyle = "#1a3a3a";
+        buildings.forEach((b) => ctx.strokeRect(b.x, b.y, b.w, b.h));
+
+        // Signal Node
+        if (!discovered) {
+          ctx.strokeStyle = `rgba(0, 255, 204, ${0.3 + Math.random() * 0.7})`;
+          ctx.beginPath();
+          ctx.arc(signal.x, signal.y, 10, 0, 7);
+          ctx.stroke();
+        }
+
+        // Seekers
+        ctx.fillStyle = "#ff004c";
+        seekers.forEach((s) => {
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, 4, 0, 7);
+          ctx.fill();
+        });
+
+        ctx.restore();
+
+        // Crosshair (Fixed in Center Viewport)
+        ctx.strokeStyle = "#00ffcc";
+        ctx.strokeRect(mouse.x - 15, mouse.y - 15, 30, 30);
+        ctx.beginPath();
+        ctx.moveTo(mouse.x - 20, mouse.y);
+        ctx.lineTo(mouse.x + 20, mouse.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(mouse.x, mouse.y - 20);
+        ctx.lineTo(mouse.x, mouse.y + 20);
+        ctx.stroke();
+
+        requestAnimationFrame(() => {
+          update();
+          draw();
+        });
       }
 
       draw();
