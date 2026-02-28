@@ -10,6 +10,7 @@
         color: #d4af37;
         font-family: "Courier New", monospace;
         display: flex;
+        flex-direction: column; /* Stack game and button */
         justify-content: center;
         align-items: center;
         height: 100vh;
@@ -19,6 +20,7 @@
       #game-container {
         position: relative;
         border: 2px solid #333;
+        box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
       }
 
       canvas {
@@ -33,38 +35,62 @@
         text-align: center;
         pointer-events: none;
       }
+
+      /* The Back Button */
+      .archive-btn {
+        margin-top: 20px;
+        padding: 10px 20px;
+        background: transparent;
+        color: #888;
+        border: 1px solid #444;
+        font-family: inherit;
+        cursor: pointer;
+        text-decoration: none;
+        font-size: 0.8rem;
+        transition: 0.3s;
+      }
+
+      .archive-btn:hover {
+        color: #d4af37;
+        border-color: #d4af37;
+        background: rgba(212, 175, 55, 0.1);
+      }
     </style>
   </head>
   <body>
     <div id="game-container">
       <div class="overlay">
         <h2 style="margin: 0">ASCENSION PROTOCOL</h2>
-        <p style="font-size: 0.8rem">LEFT / RIGHT to move | SPACE to jump</p>
+        <p style="font-size: 0.8rem; opacity: 0.7">
+          SPACE to jump | ARROWS to move
+        </p>
       </div>
       <canvas id="game"></canvas>
     </div>
+
+    <a href="../index.html" class="archive-btn">⮐ BACK TO ARCHIVE</a>
 
     <script>
       const canvas = document.getElementById("game");
       const ctx = canvas.getContext("2d");
 
-      // 1. HARD-SET DIMENSIONS (Important!)
       canvas.width = 400;
       canvas.height = 600;
 
       const gravity = 0.4;
-      const jumpForce = -12;
+      const jumpForce = -10;
       const platformSpeed = 1.5;
-      const platformGap = 90;
+      const platformGap = 100;
       const platformCount = 8;
 
       let player = {
-        x: 200,
+        x: 190,
         y: 500,
         w: 20,
         h: 20,
         dy: 0,
         vx: 0,
+        onGround: false, // Tracks if player is standing on something
       };
 
       let platforms = [];
@@ -72,7 +98,7 @@
 
       function init() {
         platforms = [];
-        // Ground platform
+        // Stable starting ground
         platforms.push({ x: 0, y: 580, w: 400, h: 20, dir: 0 });
 
         for (let i = 1; i < platformCount; i++) {
@@ -82,69 +108,91 @@
 
       function spawnPlatform(y) {
         platforms.push({
-          x: Math.random() * 340,
+          x: Math.random() * (canvas.width - 70),
           y: y,
-          w: 60,
+          w: 70,
           h: 10,
           dir: Math.random() < 0.5 ? -1 : 1,
         });
       }
 
-      window.addEventListener("keydown", (e) => (keys[e.code] = true));
+      window.addEventListener("keydown", (e) => {
+        keys[e.code] = true;
+        // Jump trigger: Only if standing on a platform
+        if (e.code === "Space" && player.onGround) {
+          player.dy = jumpForce;
+          player.onGround = false;
+        }
+      });
       window.addEventListener("keyup", (e) => (keys[e.code] = false));
 
       function update() {
-        // Horizontal movement
+        // Left/Right Movement
         if (keys["ArrowLeft"]) player.vx = -4;
         else if (keys["ArrowRight"]) player.vx = 4;
         else player.vx = 0;
 
         player.x += player.vx;
-        player.dy += gravity;
-        player.y += player.dy;
 
-        // Platform logic & Collision
+        // Apply gravity only if NOT on ground
+        if (!player.onGround) {
+          player.dy += gravity;
+          player.y += player.dy;
+        }
+
+        let wasOnGround = player.onGround;
+        player.onGround = false; // Reset every frame to check again
+
         platforms.forEach((p) => {
-          // Move platforms
+          // Move horizontal platforms
           p.x += p.dir * platformSpeed;
           if (p.x <= 0 || p.x + p.w >= canvas.width) p.dir *= -1;
 
-          // Collision (falling down only)
+          // Collision Detection (Check if player is landing on top)
           if (
-            player.dy > 0 &&
+            player.dy >= 0 &&
             player.x + player.w > p.x &&
             player.x < p.x + p.w &&
             player.y + player.h >= p.y &&
-            player.y + player.h <= p.y + p.h + player.dy
+            player.y + player.h <= p.y + p.h + 10
           ) {
             player.y = p.y - player.h;
-            player.dy = jumpForce; // Auto-jump
+            player.dy = 0;
+            player.onGround = true;
+
+            // Move player with moving platform
+            player.x += p.dir * platformSpeed;
           }
 
-          // Recycle platforms
+          // Recycle platforms as they scroll off bottom
           if (p.y > canvas.height) {
-            p.y = 0;
+            p.y -= platformCount * platformGap;
             p.x = Math.random() * (canvas.width - p.w);
           }
         });
 
-        // Camera Scroll
+        // Camera Scrolling (Vertical)
         if (player.y < canvas.height / 2) {
           let diff = canvas.height / 2 - player.y;
           player.y = canvas.height / 2;
           platforms.forEach((p) => (p.y += diff));
         }
 
-        // Screen Wrap
+        // Screen Wrap (Left/Right)
         if (player.x > canvas.width) player.x = -player.w;
         if (player.x < -player.w) player.x = canvas.width;
 
-        // Death/Reset
-        if (player.y > canvas.height + 100) {
-          player.y = 500;
-          player.dy = 0;
-          init();
+        // Death Check
+        if (player.y > canvas.height + 50) {
+          resetGame();
         }
+      }
+
+      function resetGame() {
+        player.x = 190;
+        player.y = 500;
+        player.dy = 0;
+        init();
       }
 
       function draw() {
@@ -154,9 +202,12 @@
         ctx.fillStyle = "#d4af37";
         platforms.forEach((p) => ctx.fillRect(p.x, p.y, p.w, p.h));
 
-        // Draw Player
+        // Draw Player (Glowing Square)
         ctx.fillStyle = "#fff";
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "#fff";
         ctx.fillRect(player.x, player.y, player.w, player.h);
+        ctx.shadowBlur = 0; // Reset shadow for other elements
       }
 
       function loop() {
