@@ -49,7 +49,6 @@
         pointer-events: none;
       }
 
-      /* FLICKER ANIMATION */
       .crt-flicker {
         position: absolute;
         top: 0;
@@ -88,6 +87,15 @@
         text-shadow: 2px 2px #000;
       }
 
+      #ability-bar {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        font-size: 0.7rem;
+        text-align: right;
+        z-index: 30;
+      }
+
       .archive-btn {
         margin-top: 20px;
         padding: 10px 20px;
@@ -109,6 +117,7 @@
           RECORD: <span id="highScore">0</span>m
         </div>
       </div>
+      <div id="ability-bar"></div>
       <canvas id="game"></canvas>
     </div>
 
@@ -119,6 +128,7 @@
       const ctx = canvas.getContext("2d");
       const scoreEl = document.getElementById("currentScore");
       const highEl = document.getElementById("highScore");
+      const abilityEl = document.getElementById("ability-bar");
 
       canvas.width = 400;
       canvas.height = 600;
@@ -129,10 +139,10 @@
       const platformSprite = new Image();
       platformSprite.src = "platformyboy.png";
 
-      // Game State
+      // Game Physics
       const gravity = 0.4;
       const jumpForce = -10;
-      const platformSpeed = 1.5;
+      const basePlatformSpeed = 1.5;
       const platformGap = 100;
       const platformCount = 8;
 
@@ -148,14 +158,27 @@
         dy: 0,
         vx: 0,
         onGround: false,
+        shielded: false,
+        magnetized: false,
       };
+
       let platforms = [];
+      let powerUps = [];
       let keys = {};
+      let slowMoTimer = 0;
+      let magnetTimer = 0;
 
       function init() {
         score = 0;
         scoreEl.innerText = score;
         platforms = [];
+        powerUps = [];
+        slowMoTimer = 0;
+        magnetTimer = 0;
+        player.shielded = false;
+        player.magnetized = false;
+
+        // Ground
         platforms.push({ x: 0, y: 580, w: 400, h: 20, dir: 0 });
         for (let i = 1; i < platformCount; i++) {
           spawnPlatform(canvas.height - i * platformGap);
@@ -163,18 +186,36 @@
       }
 
       function spawnPlatform(y) {
-        platforms.push({
+        const plat = {
           x: Math.random() * (canvas.width - 70),
           y: y,
           w: 70,
           h: 15,
           dir: Math.random() < 0.5 ? -1 : 1,
-        });
+        };
+        platforms.push(plat);
+
+        // 15% chance to spawn a power-up on new platforms
+        if (Math.random() < 0.15) {
+          const types = ["shield", "slowmo", "magnet"];
+          powerUps.push({
+            x: plat.x + plat.w / 2 - 8,
+            y: plat.y - 25,
+            w: 16,
+            h: 16,
+            type: types[Math.floor(Math.random() * types.length)],
+            parentPlat: plat,
+          });
+        }
       }
 
       window.addEventListener("keydown", (e) => {
         keys[e.code] = true;
-        if (e.code === "Space" && player.onGround) {
+        // Added W and Up Arrow for Jump alongside Space
+        if (
+          (e.code === "Space" || e.code === "KeyW" || e.code === "ArrowUp") &&
+          player.onGround
+        ) {
           player.dy = jumpForce;
           player.onGround = false;
         }
@@ -182,9 +223,24 @@
       window.addEventListener("keyup", (e) => (keys[e.code] = false));
 
       function update() {
-        if (keys["ArrowLeft"]) player.vx = -4;
-        else if (keys["ArrowRight"]) player.vx = 4;
+        // WASD & Arrow Movement
+        if (keys["ArrowLeft"] || keys["KeyA"]) player.vx = -4;
+        else if (keys["ArrowRight"] || keys["KeyD"]) player.vx = 4;
         else player.vx = 0;
+
+        // Magnet Logic (Lattice Pull)
+        if (magnetTimer > 0) {
+          magnetTimer--;
+          player.magnetized = true;
+          platforms.forEach((p) => {
+            if (Math.abs(player.y - p.y) < 60 && player.dy > 0) {
+              let centerX = p.x + p.w / 2 - player.w / 2;
+              player.x += (centerX - player.x) * 0.08;
+            }
+          });
+        } else {
+          player.magnetized = false;
+        }
 
         player.x += player.vx;
         if (!player.onGround) {
@@ -194,10 +250,18 @@
 
         player.onGround = false;
 
+        // Platform Speed (Slow-mo check)
+        let currentSpeed = basePlatformSpeed;
+        if (slowMoTimer > 0) {
+          slowMoTimer--;
+          currentSpeed *= 0.4;
+        }
+
         platforms.forEach((p) => {
-          p.x += p.dir * platformSpeed;
+          p.x += p.dir * currentSpeed;
           if (p.x <= 0 || p.x + p.w >= canvas.width) p.dir *= -1;
 
+          // Landing Detection
           if (
             player.dy >= 0 &&
             player.x + player.w > p.x &&
@@ -208,7 +272,7 @@
             player.y = p.y - player.h;
             player.dy = 0;
             player.onGround = true;
-            player.x += p.dir * platformSpeed;
+            player.x += p.dir * currentSpeed;
           }
 
           if (p.y > canvas.height) {
@@ -217,6 +281,29 @@
           }
         });
 
+        // Power-up Collision
+        powerUps.forEach((pu, i) => {
+          pu.y = pu.parentPlat.y - 25;
+          pu.x = pu.parentPlat.x + pu.parentPlat.w / 2 - 8;
+
+          if (
+            player.x < pu.x + pu.w &&
+            player.x + player.w > pu.x &&
+            player.y < pu.y + pu.h &&
+            player.y + player.h > pu.y
+          ) {
+            if (pu.type === "shield") player.shielded = true;
+            if (pu.type === "slowmo") slowMoTimer = 400;
+            if (pu.type === "magnet") magnetTimer = 400;
+
+            powerUps.splice(i, 1);
+          }
+        });
+
+        // Cleanup off-screen powerups
+        powerUps = powerUps.filter((pu) => pu.y < canvas.height);
+
+        // Scroll
         if (player.y < canvas.height / 2) {
           let diff = canvas.height / 2 - player.y;
           player.y = canvas.height / 2;
@@ -225,13 +312,30 @@
           platforms.forEach((p) => (p.y += diff));
         }
 
+        // Wrap
         if (player.x > canvas.width) player.x = -player.w;
         if (player.x < -player.w) player.x = canvas.width;
 
+        // Death / Shield Check
         if (player.y > canvas.height + 50) {
-          saveHighScore();
-          resetGame();
+          if (player.shielded) {
+            player.dy = -15; // Kinetic Aegis Bounce
+            player.shielded = false;
+          } else {
+            saveHighScore();
+            resetGame();
+          }
         }
+
+        // UI Text Update
+        let status = [];
+        if (player.shielded)
+          status.push("<span style='color:#d4af37'>[AEGIS]</span>");
+        if (slowMoTimer > 0)
+          status.push("<span style='color:#00ffcc'>[BUFFER]</span>");
+        if (magnetTimer > 0)
+          status.push("<span style='color:#ff004c'>[LATTICE]</span>");
+        abilityEl.innerHTML = status.join("<br>");
       }
 
       function saveHighScore() {
@@ -253,10 +357,37 @@
       function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Draw Platforms Sprite
+        // Draw Platforms
         platforms.forEach((p) => {
           ctx.drawImage(platformSprite, p.x, p.y, p.w, p.h);
         });
+
+        // Draw Powerups (Glowing Orbs)
+        powerUps.forEach((pu) => {
+          ctx.shadowBlur = 10;
+          if (pu.type === "shield") ctx.shadowColor = ctx.fillStyle = "#d4af37";
+          if (pu.type === "slowmo") ctx.shadowColor = ctx.fillStyle = "#00ffcc";
+          if (pu.type === "magnet") ctx.shadowColor = ctx.fillStyle = "#ff004c";
+          ctx.beginPath();
+          ctx.arc(pu.x + 8, pu.y + 8, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        });
+
+        // Draw Shield Aura if active
+        if (player.shielded) {
+          ctx.strokeStyle = "#d4af37";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(
+            player.x + player.w / 2,
+            player.y + player.h / 2,
+            22,
+            0,
+            Math.PI * 2
+          );
+          ctx.stroke();
+        }
 
         // Draw Player Sprite
         ctx.drawImage(playerSprite, player.x, player.y, player.w, player.h);
@@ -268,7 +399,6 @@
         requestAnimationFrame(loop);
       }
 
-      // Wait for images to load before starting
       let imagesLoaded = 0;
       [playerSprite, platformSprite].forEach((img) => {
         img.onload = () => {
