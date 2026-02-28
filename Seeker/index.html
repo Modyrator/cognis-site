@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>73RRA – SIGNAL_SEEKER: ARCHIVE_RECOVERY</title>
+    <title>73RRA – SIGNAL_SEEKER: BOUNDARY_LOCK</title>
     <style>
       body {
         margin: 0;
@@ -74,6 +74,7 @@
         text-transform: uppercase;
         font-size: 11px;
         letter-spacing: 2px;
+        z-index: 5;
       }
       #exit-btn {
         position: absolute;
@@ -93,12 +94,13 @@
       }
       #minimap {
         position: absolute;
-        bottom: 80px;
-        right: 20px;
+        bottom: 30px;
+        right: 30px;
         width: 150px;
         height: 150px;
         border: 1px solid #1a3a3a;
-        background: rgba(0, 20, 20, 0.2);
+        background: rgba(0, 20, 20, 0.4);
+        z-index: 5;
       }
     </style>
   </head>
@@ -147,7 +149,8 @@
       const WORLD_SIZE = 2000;
       let score = 0,
         sync = 0,
-        discovered = false;
+        discovered = false,
+        glitchTime = 0;
       let camX = 500,
         camY = 500;
       let playerPos = { x: 1000, y: 1000 };
@@ -173,6 +176,7 @@
       }));
 
       function checkCollision(px, py) {
+        if (px < 0 || px > WORLD_SIZE || py < 0 || py > WORLD_SIZE) return true;
         return buildings.some(
           (b) => px > b.x && px < b.x + b.w && py > b.y && py < b.y + b.h
         );
@@ -203,7 +207,10 @@
         let targetX = e.clientX - rect.left + camX;
         let targetY = e.clientY - rect.top + camY;
 
-        // Axis-independent collision sliding
+        // Clamp to World Size
+        targetX = Math.max(0, Math.min(WORLD_SIZE, targetX));
+        targetY = Math.max(0, Math.min(WORLD_SIZE, targetY));
+
         if (!checkCollision(targetX, playerPos.y)) playerPos.x = targetX;
         if (!checkCollision(playerPos.x, targetY)) playerPos.y = targetY;
       });
@@ -215,17 +222,21 @@
         const span = document.createElement("span");
         span.innerText = `[NODE_${score}] >> ${msg}`;
         logContent.prepend(span);
+        glitchTime = 15; // Trigger glitch visual
       }
 
       function update() {
         camX = playerPos.x - canvas.width / 2;
         camY = playerPos.y - canvas.height / 2;
 
+        // Clamp Camera to prevent showing outside map
+        camX = Math.max(0, Math.min(WORLD_SIZE - canvas.width, camX));
+        camY = Math.max(0, Math.min(WORLD_SIZE - canvas.height, camY));
+
         const dist = Math.sqrt(
           (playerPos.x - signal.x) ** 2 + (playerPos.y - signal.y) ** 2
         );
 
-        // Spatial Sound logic
         if (audioCtx && audioCtx.currentTime > nextPingTime) {
           const proximity = Math.max(0, 1 - dist / 1000);
           playPing(400 + proximity * 1200, proximity);
@@ -325,6 +336,35 @@
         });
 
         ctx.restore();
+
+        // Draw Player UI relative to viewport mouse
+        const mouseX = playerPos.x - camX;
+        const mouseY = playerPos.y - camY;
+        ctx.strokeStyle = "#00ffcc";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(mouseX - 15, mouseY - 15, 30, 30);
+        ctx.beginPath();
+        ctx.moveTo(mouseX - 20, mouseY);
+        ctx.lineTo(mouseX + 20, mouseY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(mouseX, mouseY - 20);
+        ctx.lineTo(mouseX, mouseY + 20);
+        ctx.stroke();
+
+        // Transmission Glitch Effect
+        if (glitchTime > 0) {
+          ctx.fillStyle = `rgba(0, 255, 204, ${Math.random() * 0.3})`;
+          for (let i = 0; i < 10; i++)
+            ctx.fillRect(
+              0,
+              Math.random() * canvas.height,
+              canvas.width,
+              Math.random() * 5
+            );
+          glitchTime--;
+        }
+
         drawMinimap();
         requestAnimationFrame(() => {
           update();
