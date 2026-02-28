@@ -10,7 +10,7 @@
         color: #d4af37;
         font-family: "Courier New", monospace;
         display: flex;
-        flex-direction: column; /* Stack game and button */
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         height: 100vh;
@@ -20,12 +20,22 @@
       #game-container {
         position: relative;
         border: 2px solid #333;
-        box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
       }
 
       canvas {
         background: linear-gradient(#050505, #000);
         display: block;
+      }
+
+      /* Score UI */
+      .ui-panel {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        text-align: left;
+        pointer-events: none;
+        font-size: 0.9rem;
+        z-index: 10;
       }
 
       .overlay {
@@ -36,7 +46,6 @@
         pointer-events: none;
       }
 
-      /* The Back Button */
       .archive-btn {
         margin-top: 20px;
         padding: 10px 20px;
@@ -59,11 +68,17 @@
   </head>
   <body>
     <div id="game-container">
+      <div class="ui-panel">
+        <div>ASCENSION: <span id="currentScore">0</span>m</div>
+        <div style="opacity: 0.6; font-size: 0.7rem">
+          RECORD: <span id="highScore">0</span>m
+        </div>
+      </div>
+
       <div class="overlay">
-        <h2 style="margin: 0">ASCENSION PROTOCOL</h2>
-        <p style="font-size: 0.8rem; opacity: 0.7">
-          SPACE to jump | ARROWS to move
-        </p>
+        <h2 style="margin: 0; font-size: 1rem; opacity: 0.4">
+          ASCENSION PROTOCOL
+        </h2>
       </div>
       <canvas id="game"></canvas>
     </div>
@@ -73,6 +88,8 @@
     <script>
       const canvas = document.getElementById("game");
       const ctx = canvas.getContext("2d");
+      const scoreEl = document.getElementById("currentScore");
+      const highEl = document.getElementById("highScore");
 
       canvas.width = 400;
       canvas.height = 600;
@@ -83,6 +100,10 @@
       const platformGap = 100;
       const platformCount = 8;
 
+      let score = 0;
+      let highScore = localStorage.getItem("cognis_highscore") || 0;
+      highEl.innerText = highScore;
+
       let player = {
         x: 190,
         y: 500,
@@ -90,17 +111,17 @@
         h: 20,
         dy: 0,
         vx: 0,
-        onGround: false, // Tracks if player is standing on something
+        onGround: false,
       };
-
       let platforms = [];
       let keys = {};
 
       function init() {
+        score = 0;
+        scoreEl.innerText = score;
         platforms = [];
-        // Stable starting ground
+        // Ground
         platforms.push({ x: 0, y: 580, w: 400, h: 20, dir: 0 });
-
         for (let i = 1; i < platformCount; i++) {
           spawnPlatform(canvas.height - i * platformGap);
         }
@@ -118,7 +139,6 @@
 
       window.addEventListener("keydown", (e) => {
         keys[e.code] = true;
-        // Jump trigger: Only if standing on a platform
         if (e.code === "Space" && player.onGround) {
           player.dy = jumpForce;
           player.onGround = false;
@@ -127,28 +147,23 @@
       window.addEventListener("keyup", (e) => (keys[e.code] = false));
 
       function update() {
-        // Left/Right Movement
         if (keys["ArrowLeft"]) player.vx = -4;
         else if (keys["ArrowRight"]) player.vx = 4;
         else player.vx = 0;
 
         player.x += player.vx;
 
-        // Apply gravity only if NOT on ground
         if (!player.onGround) {
           player.dy += gravity;
           player.y += player.dy;
         }
 
-        let wasOnGround = player.onGround;
-        player.onGround = false; // Reset every frame to check again
+        player.onGround = false;
 
         platforms.forEach((p) => {
-          // Move horizontal platforms
           p.x += p.dir * platformSpeed;
           if (p.x <= 0 || p.x + p.w >= canvas.width) p.dir *= -1;
 
-          // Collision Detection (Check if player is landing on top)
           if (
             player.dy >= 0 &&
             player.x + player.w > p.x &&
@@ -159,32 +174,42 @@
             player.y = p.y - player.h;
             player.dy = 0;
             player.onGround = true;
-
-            // Move player with moving platform
             player.x += p.dir * platformSpeed;
           }
 
-          // Recycle platforms as they scroll off bottom
           if (p.y > canvas.height) {
             p.y -= platformCount * platformGap;
             p.x = Math.random() * (canvas.width - p.w);
           }
         });
 
-        // Camera Scrolling (Vertical)
+        // Camera Scroll & Score Calculation
         if (player.y < canvas.height / 2) {
           let diff = canvas.height / 2 - player.y;
           player.y = canvas.height / 2;
+
+          // Add to score based on distance climbed
+          score += Math.floor(diff);
+          scoreEl.innerText = Math.floor(score / 10); // Display as simplified meters
+
           platforms.forEach((p) => (p.y += diff));
         }
 
-        // Screen Wrap (Left/Right)
         if (player.x > canvas.width) player.x = -player.w;
         if (player.x < -player.w) player.x = canvas.width;
 
-        // Death Check
         if (player.y > canvas.height + 50) {
+          saveHighScore();
           resetGame();
+        }
+      }
+
+      function saveHighScore() {
+        let finalScore = Math.floor(score / 10);
+        if (finalScore > highScore) {
+          highScore = finalScore;
+          localStorage.setItem("cognis_highscore", highScore);
+          highEl.innerText = highScore;
         }
       }
 
@@ -197,17 +222,13 @@
 
       function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Draw Platforms
         ctx.fillStyle = "#d4af37";
         platforms.forEach((p) => ctx.fillRect(p.x, p.y, p.w, p.h));
-
-        // Draw Player (Glowing Square)
         ctx.fillStyle = "#fff";
         ctx.shadowBlur = 10;
         ctx.shadowColor = "#fff";
         ctx.fillRect(player.x, player.y, player.w, player.h);
-        ctx.shadowBlur = 0; // Reset shadow for other elements
+        ctx.shadowBlur = 0;
       }
 
       function loop() {
