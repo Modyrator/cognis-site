@@ -16,7 +16,6 @@
         overflow: hidden;
         gap: 30px;
       }
-
       #legend {
         width: 220px;
         border: 1px solid #333;
@@ -25,7 +24,6 @@
         font-size: 0.8rem;
         box-shadow: -5px 0 15px rgba(212, 175, 55, 0.1);
       }
-
       .legend-header {
         color: #fff;
         margin: 0 0 10px 0;
@@ -46,20 +44,17 @@
         margin-top: 3px;
         flex-shrink: 0;
       }
-
       #game-container {
         position: relative;
         border: 4px solid #222;
         background: #000;
         box-shadow: 0 0 40px rgba(0, 0, 0, 1);
       }
-
       #game {
         display: block;
         filter: contrast(1.1) brightness(1.1);
         cursor: none;
       }
-
       .ui-panel {
         position: absolute;
         top: 15px;
@@ -67,7 +62,6 @@
         z-index: 30;
         pointer-events: none;
       }
-
       #status-monitor {
         position: absolute;
         bottom: 20px;
@@ -78,7 +72,6 @@
         border: 1px solid #333;
         min-width: 140px;
       }
-
       .active-buff {
         font-size: 0.7rem;
         font-weight: bold;
@@ -93,7 +86,6 @@
         padding-top: 5px;
         min-height: 20px;
       }
-
       #game-over {
         position: absolute;
         top: 0;
@@ -112,21 +104,26 @@
   <body>
     <div id="legend">
       <h3 class="legend-header">INPUTS</h3>
-      <div class="legend-item"><strong>[WASD / ARROWS]</strong> Move</div>
-      <div class="legend-item"><strong>[SPACE / W / UP]</strong> Jump</div>
-
+      <div class="legend-item"><strong>[WASD/ARROWS]</strong> Move/Jump</div>
       <h3 class="legend-header" style="margin-top: 20px">UPGRADES</h3>
       <div class="legend-item">
         <div class="color-dot" style="background: #d4af37"></div>
-        <div><strong>AEGIS:</strong><br />Safety bounce if you fall.</div>
+        <div><strong>AEGIS:</strong> Safety bounce.</div>
       </div>
       <div class="legend-item">
         <div class="color-dot" style="background: #00ffcc"></div>
-        <div><strong>BUFFER:</strong><br />Slows all movement.</div>
+        <div><strong>BUFFER:</strong> Slows time.</div>
       </div>
       <div class="legend-item">
         <div class="color-dot" style="background: #ff004c"></div>
-        <div><strong>KINETIC:</strong><br />Extreme Jump Boost.</div>
+        <div><strong>KINETIC:</strong> Jump Boost.</div>
+      </div>
+      <div class="legend-item">
+        <div
+          class="color-dot"
+          style="background: #00ffff; border: 1px solid white"
+        ></div>
+        <div><strong>MODSOAR:</strong> 5s Jetpack. (RARE)</div>
       </div>
     </div>
 
@@ -139,7 +136,6 @@
           MAX_PEAK: <span id="highScore">0</span>m
         </div>
       </div>
-
       <div id="status-monitor">
         <div style="font-size: 0.6rem; color: #666; margin-bottom: 5px">
           SYSTEM_OVERCLOCK:
@@ -147,13 +143,11 @@
         <div id="active-list">STABLE</div>
         <div id="comms-text">LINK_ESTABLISHED...</div>
       </div>
-
       <div id="game-over">
         <h1 style="color: #ff004c">SYSTEM_CRASH</h1>
         <p id="final-score"></p>
         <p style="font-size: 0.8rem; color: #666">PRESS ANY KEY TO REBOOT</p>
       </div>
-
       <canvas id="game"></canvas>
     </div>
 
@@ -200,8 +194,9 @@
         isGameOver = false;
       let slowMoTimer = 0,
         boostTimer = 0,
+        jetpackTimer = 0,
         spawnCount = 0;
-      const PLAT_INTERVAL = 85; // Fixed vertical interval to prevent gaps
+      const PLAT_INTERVAL = 85;
 
       function init() {
         score = 0;
@@ -211,6 +206,7 @@
         gameOverScreen.style.display = "none";
         slowMoTimer = 0;
         boostTimer = 0;
+        jetpackTimer = 0;
         commsEl.innerText = "LINK_ESTABLISHED...";
         player = {
           x: 185,
@@ -224,8 +220,6 @@
         };
         platforms = [];
         powerUps = [];
-
-        // Ground platform
         platforms.push({
           x: 0,
           y: 580,
@@ -235,31 +229,38 @@
           speed: 0,
           type: "static",
         });
-
-        for (let i = 1; i < 10; i++) {
+        for (let i = 1; i < 10; i++)
           spawnPlatform(canvas.height - i * PLAT_INTERVAL);
-        }
       }
 
       function spawnPlatform(y) {
-        const isStatic = Math.random() < 0.3; // 30% Stationary
+        let altitude = Math.floor(score / 10);
+        let staticProb = altitude > 1500 ? 0 : altitude > 500 ? 0.15 : 0.3;
+        const isStatic = Math.random() < staticProb;
         const plat = {
           x: Math.random() * 300,
           y: y,
           w: isStatic ? 70 : 85,
           h: 18,
           dir: Math.random() < 0.5 ? -1 : 1,
-          speed: isStatic ? 0 : 0.8 + Math.random() * 1.2,
+          speed: isStatic
+            ? 0
+            : (0.8 + Math.random() * 1.2) * (1 + altitude / 3000),
           type: isStatic ? "static" : "moving",
         };
         platforms.push(plat);
-
         spawnCount++;
-        if (spawnCount >= 5 || Math.random() < 0.15) {
-          powerUps.push({
-            type: ["shield", "slowmo", "boost"][Math.floor(Math.random() * 3)],
-            parent: plat,
-          });
+        if (spawnCount >= 5) {
+          let roll = Math.random();
+          let type =
+            roll < 0.05
+              ? "jetpack"
+              : roll < 0.35
+              ? "boost"
+              : roll < 0.65
+              ? "slowmo"
+              : "shield";
+          powerUps.push({ type: type, parent: plat });
           spawnCount = 0;
         }
       }
@@ -270,9 +271,12 @@
           return;
         }
         keys[e.code] = true;
-        if (["Space", "KeyW", "ArrowUp"].includes(e.code) && player.onGround) {
-          let jumpPower = boostTimer > 0 ? -18 : -11.5;
-          player.dy = jumpPower;
+        if (
+          ["Space", "KeyW", "ArrowUp"].includes(e.code) &&
+          player.onGround &&
+          jetpackTimer <= 0
+        ) {
+          player.dy = boostTimer > 0 ? -18 : -11.5;
           player.onGround = false;
           sfx(boostTimer > 0 ? 800 : 450, "square", 0.15);
         }
@@ -281,7 +285,6 @@
 
       function update() {
         if (isGameOver) return;
-
         player.vx =
           keys["ArrowLeft"] || keys["KeyA"]
             ? -5
@@ -290,9 +293,17 @@
             : 0;
         player.x += player.vx;
 
-        if (!player.onGround) {
-          player.dy += 0.45;
+        if (jetpackTimer > 0) {
+          jetpackTimer--;
+          player.dy = -8; // Override gravity with upward thrust
           player.y += player.dy;
+          if (jetpackTimer % 5 === 0)
+            sfx(200 + Math.random() * 100, "sawtooth", 0.05, 0.05);
+        } else {
+          if (!player.onGround) {
+            player.dy += 0.45;
+            player.y += player.dy;
+          }
         }
         player.onGround = false;
 
@@ -304,9 +315,9 @@
             p.x += p.dir * p.speed * timeScale;
             if (p.x <= 0 || p.x + p.w >= canvas.width) p.dir *= -1;
           }
-
           if (
             player.dy >= 0 &&
+            jetpackTimer <= 0 &&
             player.x + player.w > p.x &&
             player.x < p.x + p.w &&
             player.y + player.h >= p.y &&
@@ -317,26 +328,30 @@
             player.onGround = true;
             if (p.type === "moving") player.x += p.dir * p.speed * timeScale;
           }
-
           if (p.y > canvas.height + 20 && index !== 0) {
-            // Re-stack at the top of the existing platform group
             let highestY = Math.min(...platforms.map((p) => p.y));
             p.y = highestY - PLAT_INTERVAL;
             p.x = Math.random() * (canvas.width - p.w);
-
-            const isStatic = Math.random() < 0.3;
-            p.type = isStatic ? "static" : "moving";
-            p.speed = isStatic ? 0 : 0.8 + Math.random() * 1.2;
-
+            let altitude = Math.floor(score / 10);
+            let staticProb = altitude > 1500 ? 0 : altitude > 500 ? 0.15 : 0.3;
+            p.type = Math.random() < staticProb ? "static" : "moving";
+            p.speed =
+              p.type === "static"
+                ? 0
+                : (0.8 + Math.random() * 1.2) * (1 + altitude / 3000);
             powerUps = powerUps.filter((pu) => pu.parent !== p);
             spawnCount++;
             if (spawnCount >= 5) {
-              powerUps.push({
-                type: ["shield", "slowmo", "boost"][
-                  Math.floor(Math.random() * 3)
-                ],
-                parent: p,
-              });
+              let roll = Math.random();
+              let type =
+                roll < 0.08
+                  ? "jetpack"
+                  : roll < 0.35
+                  ? "boost"
+                  : roll < 0.65
+                  ? "slowmo"
+                  : "shield";
+              powerUps.push({ type: type, parent: p });
               spawnCount = 0;
             }
           }
@@ -359,6 +374,10 @@
               player.dy = -18;
               player.onGround = false;
             }
+            if (pu.type === "jetpack") {
+              jetpackTimer = 300;
+              player.shielded = true;
+            } // Jetpack grants temporary shield
             powerUps.splice(i, 1);
           }
         });
@@ -370,10 +389,8 @@
           scoreEl.innerText = Math.floor(score / 10);
           platforms.forEach((p) => (p.y += diff));
         }
-
         if (player.x > canvas.width) player.x = -player.w;
         if (player.x < -player.w) player.x = canvas.width;
-
         if (player.y > canvas.height + 50) {
           if (player.shielded) {
             player.dy = -20;
@@ -406,20 +423,22 @@
           buffs.push(
             "<div class='active-buff' style='color:#ff004c'>[KINETIC_OVERDRIVE]</div>"
           );
+        if (jetpackTimer > 0)
+          buffs.push(
+            "<div class='active-buff' style='color:#00ffff'>[MODSOAR_BOOTS_ENGAGED]</div>"
+          );
         activeList.innerHTML = buffs.length ? buffs.join("") : "NOMINAL";
       }
 
       function draw() {
         ctx.clearRect(0, 0, 400, 600);
         platforms.forEach((p) => {
-          // Draw static platforms with a different visual (slight glow)
           if (p.type === "static") {
-            ctx.fillStyle = "#111";
+            ctx.fillStyle = "rgba(212, 175, 55, 0.1)";
             ctx.fillRect(p.x - 2, p.y - 2, p.w + 4, p.h + 4);
           }
           ctx.drawImage(platformSprite, p.x, p.y, p.w, p.h);
         });
-
         powerUps.forEach((pu) => {
           let px = pu.parent.x + pu.parent.w / 2 - 8;
           let py = pu.parent.y - 25;
@@ -428,13 +447,14 @@
               ? "#d4af37"
               : pu.type === "slowmo"
               ? "#00ffcc"
-              : "#ff004c";
-          ctx.shadowBlur = 15;
+              : pu.type === "boost"
+              ? "#ff004c"
+              : "#00ffff";
+          ctx.shadowBlur = pu.type === "jetpack" ? 20 : 10;
           ctx.shadowColor = ctx.fillStyle;
           ctx.fillRect(px, py, 16, 16);
           ctx.shadowBlur = 0;
         });
-
         if (player.shielded) {
           ctx.strokeStyle = "#d4af37";
           ctx.setLineDash([4, 2]);
@@ -443,13 +463,11 @@
           ctx.stroke();
           ctx.setLineDash([]);
         }
-
-        // Boost trail effect
-        if (boostTimer > 0) {
-          ctx.fillStyle = "rgba(255, 0, 76, 0.3)";
-          ctx.fillRect(player.x, player.y + player.h, player.w, 15);
+        if (jetpackTimer > 0) {
+          ctx.fillStyle = "rgba(0, 255, 255, " + Math.random() + ")";
+          ctx.fillRect(player.x + 5, player.y + player.h, 5, 20);
+          ctx.fillRect(player.x + 20, player.y + player.h, 5, 20);
         }
-
         ctx.drawImage(playerSprite, player.x, player.y, player.w, player.h);
       }
 
