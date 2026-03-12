@@ -10,6 +10,7 @@
         --soft-teal: #7fbdb0;
         --bg: #1a1a1a;
         --glass: rgba(255, 255, 255, 0.05);
+        --danger: #d45858;
       }
       body {
         margin: 0;
@@ -29,6 +30,8 @@
         border-radius: 20px;
         background: var(--glass);
         text-align: center;
+        position: relative;
+        overflow: hidden;
       }
 
       .piles {
@@ -45,24 +48,39 @@
         padding: 15px;
         border-radius: 15px;
         transition: 0.3s;
-        cursor: pointer;
       }
       .pile-col.active {
         background: rgba(197, 179, 88, 0.2);
         border: 1px solid var(--dusty-gold);
+        cursor: pointer;
       }
       .pile-col.disabled {
         opacity: 0.3;
         cursor: not-allowed;
       }
 
-      /* Rounded Pixel Sprite */
       .stone {
         width: 24px;
         height: 24px;
         background: var(--soft-teal);
         border-radius: 6px;
         box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.2);
+      }
+
+      #corruption-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(
+          circle,
+          transparent 20%,
+          var(--danger) 150%
+        );
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.5s;
       }
 
       button {
@@ -74,37 +92,27 @@
         cursor: pointer;
         font-weight: bold;
       }
-      .hidden {
-        display: none;
-      }
-      #msg {
-        margin-top: 20px;
-        font-size: 0.9rem;
-        color: var(--soft-teal);
-      }
     </style>
   </head>
   <body>
     <div class="terminal-container">
+      <div id="corruption-overlay"></div>
       <h1>PROTOCOL: ORDERED</h1>
       <div id="ui-layer">
         <button onclick="startGame()">INITIATE_SEQUENCE</button>
       </div>
 
       <div id="game-layer" class="hidden">
-        <div id="status">SELECT FROM LOWEST PILE TO HIGHEST</div>
+        <div id="status">PLAYER_TURN</div>
         <div class="piles" id="piles-container"></div>
-        <button id="confirm-btn" onclick="endTurn()">CONFIRM_MOVE</button>
-        <div id="game-over-screen" class="hidden">
-          <h2>SEQUENCE_COMPLETE</h2>
-          <button onclick="location.reload()">REBOOT</button>
-        </div>
+        <button id="confirm-btn" onclick="playerEndTurn()">CONFIRM_MOVE</button>
       </div>
     </div>
 
     <script>
       let piles = [2, 3, 4, 5, 6];
-      let activeIndex = 0; // The index of the pile allowed to be picked
+      let activeIndex = 0;
+      let turn = "player";
 
       function startGame() {
         document.getElementById("ui-layer").classList.add("hidden");
@@ -119,7 +127,7 @@
           const col = document.createElement("div");
           col.className = `pile-col ${i === activeIndex ? "active" : "disabled"}`;
           col.onclick = () => {
-            if (i === activeIndex) takeStone(i);
+            if (turn === "player" && i === activeIndex) takeStone(i);
           };
           for (let s = 0; s < count; s++) {
             const stone = document.createElement("div");
@@ -131,24 +139,42 @@
       }
 
       function takeStone(i) {
-        if (piles[i] > 0) {
-          piles[i]--;
-          render();
+        piles[i]--;
+        render();
+      }
+
+      function playerEndTurn() {
+        if (piles[activeIndex] > 0) return; // Must finish current pile
+        activeIndex++;
+        updateCorruption();
+
+        if (activeIndex >= piles.length) {
+          endGame("PLAYER_SUCCESS");
+        } else {
+          turn = "ai";
+          document.getElementById("status").innerText = "SYSTEM_CALCULATING...";
+          setTimeout(aiMove, 1000);
         }
       }
 
-      function endTurn() {
-        // Move to next pile in the sequence
-        activeIndex++;
-        if (activeIndex >= piles.length) {
-          // End of sequence reached
-          document.getElementById("game-layer").innerHTML =
-            "<h1>SEQUENCE_FINISHED</h1>";
-        } else {
-          document.getElementById("status").innerText =
-            `NEXT_PILE: ${activeIndex + 1}`;
-          render();
+      function aiMove() {
+        // AI makes a move on the current active pile
+        if (piles[activeIndex] > 0) {
+          piles[activeIndex]--;
         }
+        render();
+        turn = "player";
+        document.getElementById("status").innerText = "PLAYER_TURN";
+      }
+
+      function updateCorruption() {
+        const overlay = document.getElementById("corruption-overlay");
+        overlay.style.opacity = (activeIndex / piles.length) * 0.4;
+      }
+
+      function endGame(msg) {
+        document.getElementById("game-layer").innerHTML =
+          `<h1>${msg}</h1><button onclick='location.reload()'>REBOOT</button>`;
       }
     </script>
   </body>
