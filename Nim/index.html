@@ -10,7 +10,6 @@
         --danger: #ff004c;
         --bg: #050505;
       }
-
       body {
         margin: 0;
         background-color: var(--bg);
@@ -21,7 +20,6 @@
         align-items: center;
         height: 100vh;
       }
-
       .terminal-container {
         width: 90%;
         max-width: 600px;
@@ -34,19 +32,27 @@
       .piles {
         display: flex;
         justify-content: center;
-        gap: 20px;
+        gap: 15px;
         margin: 30px 0;
+        min-height: 80px;
       }
-
-      .pile {
+      .pile-col {
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 5px;
         cursor: pointer;
         padding: 10px;
+        border: 1px solid transparent;
+      }
+      .pile-col:hover {
         border: 1px solid #333;
-        transition: 0.3s;
       }
 
-      .pile:hover {
-        border-color: var(--primary);
+      .stone {
+        width: 20px;
+        height: 20px;
+        background: var(--primary);
+        clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
       }
 
       @keyframes glitch {
@@ -57,18 +63,10 @@
           transform: translate(-2px, 2px);
           color: var(--danger);
         }
-        40% {
-          transform: translate(-2px, -2px);
-        }
-        60% {
-          transform: translate(2px, 2px);
-          color: var(--accent);
-        }
         100% {
           transform: translate(0);
         }
       }
-
       .glitching {
         animation: glitch 0.2s linear;
       }
@@ -79,63 +77,85 @@
         border: 1px solid var(--primary);
         padding: 10px 20px;
         cursor: pointer;
-        text-transform: uppercase;
+        margin-top: 10px;
+      }
+      .hidden {
+        display: none;
       }
     </style>
   </head>
   <body>
     <div class="terminal-container">
-      <h1>NIM_PROTOCOL_ACTIVE</h1>
-      <div id="status-monitor">STATUS: AWAITING_INPUT</div>
-      <div class="piles" id="piles-container"></div>
-      <button onclick="endTurn()">CONFIRM_MOVE</button>
+      <h1>NIM_PROTOCOL</h1>
+      <div id="ui-layer">
+        <label>DIFFICULTY: </label>
+        <select id="diff" style="background: #000; color: #fff">
+          <option value="easy">ARCHIVE_TRAINEE</option>
+          <option value="hard">SYSTEM_ADMIN</option>
+        </select>
+        <button onclick="startGame()">INITIALIZE</button>
+      </div>
+
+      <div id="game-layer" class="hidden">
+        <div id="turn-monitor" style="color: var(--accent)">PLAYER_TURN</div>
+        <div class="piles" id="piles-container"></div>
+        <button onclick="endTurn()">CONFIRM_MOVE</button>
+      </div>
     </div>
 
     <script>
       let piles = [3, 4, 5];
-      let selectedPile = -1;
-      let removeCount = 0;
+      let turn = "player"; // player or ai
+
+      function startGame() {
+        document.getElementById("ui-layer").classList.add("hidden");
+        document.getElementById("game-layer").classList.remove("hidden");
+        render();
+      }
 
       function render() {
         const container = document.getElementById("piles-container");
         container.innerHTML = "";
         piles.forEach((count, i) => {
-          const div = document.createElement("div");
-          div.className = "pile";
-          div.innerText = "I ".repeat(count);
-          div.onclick = () => select(i);
-          container.appendChild(div);
+          const col = document.createElement("div");
+          col.className = "pile-col";
+          col.onclick = () => {
+            if (turn === "player") takeStone(i);
+          };
+          for (let s = 0; s < count; s++) {
+            const stone = document.createElement("div");
+            stone.className = "stone";
+            col.appendChild(stone);
+          }
+          container.appendChild(col);
         });
       }
 
-      function select(i) {
-        if (selectedPile !== -1 && selectedPile !== i) return;
+      function takeStone(i) {
         if (piles[i] > 0) {
-          selectedPile = i;
           piles[i]--;
-          removeCount++;
           render();
         }
       }
 
       function endTurn() {
-        if (selectedPile === -1) return;
-
-        const container = document.getElementById("piles-container");
-        container.classList.add("glitching");
+        turn = "ai";
+        document.getElementById("turn-monitor").innerText =
+          "SYSTEM_CALCULATING...";
+        document.getElementById("piles-container").classList.add("glitching");
         setTimeout(() => {
-          container.classList.remove("glitching");
+          document
+            .getElementById("piles-container")
+            .classList.remove("glitching");
           aiMove();
-        }, 300);
-
-        selectedPile = -1;
-        removeCount = 0;
+        }, 800);
       }
 
       function aiMove() {
+        const difficulty = document.getElementById("diff").value;
         let nimSum = piles.reduce((a, b) => a ^ b, 0);
 
-        if (nimSum !== 0) {
+        if (difficulty === "hard" && nimSum !== 0) {
           for (let i = 0; i < piles.length; i++) {
             let target = piles[i] ^ nimSum;
             if (target < piles[i]) {
@@ -147,10 +167,12 @@
           let idx = piles.findIndex((p) => p > 0);
           if (idx !== -1) piles[idx] = Math.max(0, piles[idx] - 1);
         }
-        render();
-      }
 
-      render();
+        render();
+        turn = "player";
+        document.getElementById("turn-monitor").innerText = "PLAYER_TURN";
+        if (piles.every((p) => p === 0)) alert("PROTOCOL_COMPLETE");
+      }
     </script>
   </body>
 </html>
