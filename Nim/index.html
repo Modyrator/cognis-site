@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cognis – Nim Protocol</title>
+    <style>
+      :root {
+        --primary: #d4af37;
+        --accent: #00ffcc;
+        --danger: #ff004c;
+        --bg: #050505;
+      }
+
+      body {
+        margin: 0;
+        background-color: var(--bg);
+        color: var(--primary);
+        font-family: "Courier New", monospace;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .terminal-container {
+        width: 90%;
+        max-width: 600px;
+        padding: 40px;
+        border: 1px solid #222;
+        background: rgba(0, 0, 0, 0.8);
+        text-align: center;
+      }
+
+      .piles {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin: 30px 0;
+      }
+
+      .pile {
+        cursor: pointer;
+        padding: 10px;
+        border: 1px solid #333;
+        transition: 0.3s;
+      }
+
+      .pile:hover {
+        border-color: var(--primary);
+      }
+
+      @keyframes glitch {
+        0% {
+          transform: translate(0);
+        }
+        20% {
+          transform: translate(-2px, 2px);
+          color: var(--danger);
+        }
+        40% {
+          transform: translate(-2px, -2px);
+        }
+        60% {
+          transform: translate(2px, 2px);
+          color: var(--accent);
+        }
+        100% {
+          transform: translate(0);
+        }
+      }
+
+      .glitching {
+        animation: glitch 0.2s linear;
+      }
+
+      button {
+        background: #111;
+        color: var(--primary);
+        border: 1px solid var(--primary);
+        padding: 10px 20px;
+        cursor: pointer;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="terminal-container">
+      <h1>NIM_PROTOCOL_ACTIVE</h1>
+      <div id="status-monitor">STATUS: AWAITING_INPUT</div>
+      <div class="piles" id="piles-container"></div>
+      <button onclick="endTurn()">CONFIRM_MOVE</button>
+    </div>
+
+    <script>
+      let piles = [3, 4, 5];
+      let selectedPile = -1;
+      let removeCount = 0;
+
+      function render() {
+        const container = document.getElementById("piles-container");
+        container.innerHTML = "";
+        piles.forEach((count, i) => {
+          const div = document.createElement("div");
+          div.className = "pile";
+          div.innerText = "I ".repeat(count);
+          div.onclick = () => select(i);
+          container.appendChild(div);
+        });
+      }
+
+      function select(i) {
+        if (selectedPile !== -1 && selectedPile !== i) return;
+        if (piles[i] > 0) {
+          selectedPile = i;
+          piles[i]--;
+          removeCount++;
+          render();
+        }
+      }
+
+      function endTurn() {
+        if (selectedPile === -1) return;
+
+        const container = document.getElementById("piles-container");
+        container.classList.add("glitching");
+        setTimeout(() => {
+          container.classList.remove("glitching");
+          aiMove();
+        }, 300);
+
+        selectedPile = -1;
+        removeCount = 0;
+      }
+
+      function aiMove() {
+        let nimSum = piles.reduce((a, b) => a ^ b, 0);
+
+        if (nimSum !== 0) {
+          for (let i = 0; i < piles.length; i++) {
+            let target = piles[i] ^ nimSum;
+            if (target < piles[i]) {
+              piles[i] = target;
+              break;
+            }
+          }
+        } else {
+          let idx = piles.findIndex((p) => p > 0);
+          if (idx !== -1) piles[idx] = Math.max(0, piles[idx] - 1);
+        }
+        render();
+      }
+
+      render();
+    </script>
+  </body>
+</html>
