@@ -34,7 +34,7 @@
         justify-content: center;
         gap: 15px;
         margin: 30px 0;
-        min-height: 80px;
+        min-height: 120px;
       }
       .pile-col {
         display: flex;
@@ -82,11 +82,17 @@
       .hidden {
         display: none;
       }
+      #game-over-screen {
+        font-size: 1.5rem;
+        color: var(--danger);
+        margin-top: 20px;
+      }
     </style>
   </head>
   <body>
     <div class="terminal-container">
-      <h1>NIM_PROTOCOL</h1>
+      <h1>NIM_PROTOCOL_V2</h1>
+
       <div id="ui-layer">
         <label>DIFFICULTY: </label>
         <select id="diff" style="background: #000; color: #fff">
@@ -99,13 +105,18 @@
       <div id="game-layer" class="hidden">
         <div id="turn-monitor" style="color: var(--accent)">PLAYER_TURN</div>
         <div class="piles" id="piles-container"></div>
-        <button onclick="endTurn()">CONFIRM_MOVE</button>
+        <button id="confirm-btn" onclick="endTurn()">CONFIRM_MOVE</button>
+        <div id="game-over-screen" class="hidden">
+          PROTOCOL_TERMINATED: SYSTEM_WON
+          <br />
+          <button onclick="location.reload()">REBOOT</button>
+        </div>
       </div>
     </div>
 
     <script>
-      let piles = [3, 4, 5];
-      let turn = "player"; // player or ai
+      let piles = [3, 4, 5, 2, 6]; // Expanded to 5 piles
+      let turn = "player";
 
       function startGame() {
         document.getElementById("ui-layer").classList.add("hidden");
@@ -143,6 +154,7 @@
         document.getElementById("turn-monitor").innerText =
           "SYSTEM_CALCULATING...";
         document.getElementById("piles-container").classList.add("glitching");
+
         setTimeout(() => {
           document
             .getElementById("piles-container")
@@ -169,9 +181,17 @@
         }
 
         render();
-        turn = "player";
-        document.getElementById("turn-monitor").innerText = "PLAYER_TURN";
-        if (piles.every((p) => p === 0)) alert("PROTOCOL_COMPLETE");
+
+        if (piles.every((p) => p === 0)) {
+          document.getElementById("confirm-btn").classList.add("hidden");
+          document.getElementById("turn-monitor").classList.add("hidden");
+          document
+            .getElementById("game-over-screen")
+            .classList.remove("hidden");
+        } else {
+          turn = "player";
+          document.getElementById("turn-monitor").innerText = "PLAYER_TURN";
+        }
       }
     </script>
   </body>
