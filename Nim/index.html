@@ -7,14 +7,11 @@
       :root {
         --metal: #8a8d8f;
         --dusty-gold: #c5b358;
-        --soft-teal: #7fbdb0;
         --bg: #1a1a1a;
-        --glass: rgba(255, 255, 255, 0.05);
-        --danger: #d45858;
       }
       body {
         margin: 0;
-        background-color: var(--bg);
+        background: var(--bg);
         color: var(--dusty-gold);
         font-family: "Courier New", monospace;
         display: flex;
@@ -28,10 +25,8 @@
         padding: 40px;
         border: 2px solid var(--metal);
         border-radius: 20px;
-        background: var(--glass);
+        background: rgba(255, 255, 255, 0.03);
         text-align: center;
-        position: relative;
-        overflow: hidden;
       }
 
       .piles {
@@ -44,51 +39,26 @@
       .pile-col {
         display: flex;
         flex-direction: column-reverse;
-        gap: 8px;
-        padding: 15px;
-        border-radius: 15px;
-        transition: 0.3s;
-      }
-      .pile-col.active {
-        background: rgba(197, 179, 88, 0.2);
-        border: 1px solid var(--dusty-gold);
+        gap: 5px;
+        padding: 10px;
         cursor: pointer;
+        border: 1px solid transparent;
       }
-      .pile-col.disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
-      }
-
-      .stone {
-        width: 24px;
-        height: 24px;
-        background: var(--soft-teal);
-        border-radius: 6px;
-        box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.2);
+      .pile-col:hover {
+        border: 1px solid var(--dusty-gold);
       }
 
-      #corruption-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(
-          circle,
-          transparent 20%,
-          var(--danger) 150%
-        );
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.5s;
+      .stone-sprite {
+        width: 30px;
+        height: 30px;
+        background-size: contain;
+        background-repeat: no-repeat;
       }
-
       button {
         background: var(--metal);
         color: var(--bg);
         border: none;
-        padding: 12px 24px;
-        border-radius: 8px;
+        padding: 10px 20px;
         cursor: pointer;
         font-weight: bold;
       }
@@ -96,86 +66,88 @@
   </head>
   <body>
     <div class="terminal-container">
-      <div id="corruption-overlay"></div>
-      <h1>PROTOCOL: ORDERED</h1>
-      <div id="ui-layer">
-        <button onclick="startGame()">INITIATE_SEQUENCE</button>
-      </div>
-
-      <div id="game-layer" class="hidden">
-        <div id="status">PLAYER_TURN</div>
-        <div class="piles" id="piles-container"></div>
-        <button id="confirm-btn" onclick="playerEndTurn()">CONFIRM_MOVE</button>
-      </div>
+      <h1>NIM_PROTOCOL_ACTIVE</h1>
+      <div id="status">YOUR_TURN</div>
+      <div class="piles" id="piles-container"></div>
+      <button id="confirm-btn" onclick="playerMove()" disabled>
+        CONFIRM_TURN
+      </button>
     </div>
 
     <script>
-      let piles = [2, 3, 4, 5, 6];
-      let activeIndex = 0;
-      let turn = "player";
-
-      function startGame() {
-        document.getElementById("ui-layer").classList.add("hidden");
-        document.getElementById("game-layer").classList.remove("hidden");
-        render();
-      }
+      const stoneUrl = "path/to/your-sprite.png";
+      let piles = [3, 4, 5];
+      let selectedPile = -1;
+      let removeCount = 0;
 
       function render() {
         const container = document.getElementById("piles-container");
         container.innerHTML = "";
         piles.forEach((count, i) => {
           const col = document.createElement("div");
-          col.className = `pile-col ${i === activeIndex ? "active" : "disabled"}`;
-          col.onclick = () => {
-            if (turn === "player" && i === activeIndex) takeStone(i);
-          };
+          col.className = "pile-col";
+          col.onclick = () => selectPile(i);
           for (let s = 0; s < count; s++) {
             const stone = document.createElement("div");
-            stone.className = "stone";
+            stone.className = "stone-sprite";
+            stone.style.backgroundImage = `url('${stoneUrl}')`;
             col.appendChild(stone);
           }
           container.appendChild(col);
         });
       }
 
-      function takeStone(i) {
-        piles[i]--;
-        render();
+      function selectPile(i) {
+        if (piles[i] > 0 && (selectedPile === -1 || selectedPile === i)) {
+          selectedPile = i;
+          piles[i]--;
+          removeCount++;
+          document.getElementById("confirm-btn").disabled = false;
+          render();
+        }
       }
 
-      function playerEndTurn() {
-        if (piles[activeIndex] > 0) return; // Must finish current pile
-        activeIndex++;
-        updateCorruption();
+      function playerMove() {
+        selectedPile = -1;
+        removeCount = 0;
+        document.getElementById("confirm-btn").disabled = true;
+        if (checkWin()) return;
 
-        if (activeIndex >= piles.length) {
-          endGame("PLAYER_SUCCESS");
-        } else {
-          turn = "ai";
-          document.getElementById("status").innerText = "SYSTEM_CALCULATING...";
-          setTimeout(aiMove, 1000);
-        }
+        document.getElementById("status").innerText = "AI_CALCULATING...";
+        setTimeout(aiMove, 800);
       }
 
       function aiMove() {
-        // AI makes a move on the current active pile
-        if (piles[activeIndex] > 0) {
-          piles[activeIndex]--;
+        // Nim-sum (XOR) strategy
+        let nimSum = piles.reduce((a, b) => a ^ b, 0);
+
+        if (nimSum !== 0) {
+          for (let i = 0; i < piles.length; i++) {
+            let target = piles[i] ^ nimSum;
+            if (target < piles[i]) {
+              piles[i] = target;
+              break;
+            }
+          }
+        } else {
+          let idx = piles.findIndex((p) => p > 0);
+          if (idx !== -1) piles[idx] = Math.max(0, piles[idx] - 1);
         }
+
         render();
-        turn = "player";
-        document.getElementById("status").innerText = "PLAYER_TURN";
+        if (!checkWin())
+          document.getElementById("status").innerText = "YOUR_TURN";
       }
 
-      function updateCorruption() {
-        const overlay = document.getElementById("corruption-overlay");
-        overlay.style.opacity = (activeIndex / piles.length) * 0.4;
+      function checkWin() {
+        if (piles.every((p) => p === 0)) {
+          document.getElementById("status").innerText = "GAME_OVER";
+          return true;
+        }
+        return false;
       }
 
-      function endGame(msg) {
-        document.getElementById("game-layer").innerHTML =
-          `<h1>${msg}</h1><button onclick='location.reload()'>REBOOT</button>`;
-      }
+      render();
     </script>
   </body>
 </html>
