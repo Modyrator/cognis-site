@@ -7,7 +7,9 @@
       :root {
         --metal: #8a8d8f;
         --dusty-gold: #c5b358;
+        --soft-teal: #7fbdb0;
         --bg: #1a1a1a;
+        --danger: #ff004c;
       }
       body {
         margin: 0;
@@ -18,6 +20,7 @@
         justify-content: center;
         align-items: center;
         height: 100vh;
+        overflow: hidden;
       }
       .terminal-container {
         width: 90%;
@@ -27,6 +30,7 @@
         border-radius: 20px;
         background: rgba(255, 255, 255, 0.03);
         text-align: center;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
       }
 
       .piles {
@@ -36,21 +40,6 @@
         margin: 30px 0;
         min-height: 140px;
       }
-      .back-link {
-        display: block;
-        margin-top: 60px;
-        text-align: center;
-        color: var(--gold);
-        text-decoration: none;
-        text-transform: uppercase;
-        font-size: 0.8rem;
-        letter-spacing: 2px;
-        transition: 0.3s;
-      }
-      .back-link:hover {
-        letter-spacing: 4px;
-        text-shadow: 0 0 10px var(--gold);
-      }
       .pile-col {
         display: flex;
         flex-direction: column-reverse;
@@ -58,9 +47,17 @@
         padding: 10px;
         cursor: pointer;
         border: 1px solid transparent;
+        border-radius: 10px;
+        transition: 0.2s;
       }
       .pile-col:hover {
-        border: 1px solid var(--dusty-gold);
+        border: 1px solid var(--soft-teal);
+        background: rgba(127, 189, 176, 0.1);
+      }
+      .pile-col.locked {
+        opacity: 0.5;
+        filter: grayscale(1);
+        cursor: not-allowed;
       }
 
       .stone-sprite {
@@ -68,32 +65,75 @@
         height: 30px;
         background-size: contain;
         background-repeat: no-repeat;
+        background-image: url("nimstone.png");
+        background-color: var(--soft-teal);
+        border-radius: 4px;
       }
+
+      #status {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+        letter-spacing: 2px;
+      }
+      .win {
+        color: var(--soft-teal);
+        text-shadow: 0 0 10px var(--soft-teal);
+      }
+      .lose {
+        color: var(--danger);
+        text-shadow: 0 0 10px var(--danger);
+      }
+
       button {
         background: var(--metal);
         color: var(--bg);
         border: none;
-        padding: 10px 20px;
+        padding: 12px 24px;
         cursor: pointer;
         font-weight: bold;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+      button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      .back-link {
+        display: block;
+        margin-top: 25px;
+        color: var(--metal);
+        text-decoration: none;
+        font-size: 0.8rem;
+      }
+      .back-link:hover {
+        color: var(--dusty-gold);
       }
     </style>
   </head>
   <body>
     <div class="terminal-container">
-      <h1>NIM_PROTOCOL_ACTIVE</h1>
-      <div id="status">YOUR_TURN</div>
+      <h1 id="title">NIM_PROTOCOL_v4</h1>
+      <div id="status">INITIALIZING...</div>
+
       <div class="piles" id="piles-container"></div>
+
       <button id="confirm-btn" onclick="playerMove()" disabled>
         CONFIRM_TURN
       </button>
+
+      <div id="game-over-ui" style="display: none; margin-top: 20px">
+        <button onclick="location.reload()">RE-INITIALIZE</button>
+      </div>
+
+      <a href="../Index.html" class="back-link">BACK TO ARCHIVE</a>
     </div>
 
     <script>
-      const stoneUrl = "nimstone.png";
-      let piles = [3, 4, 5];
+      let piles = [3, 4, 5, 2];
       let selectedPile = -1;
-      let removeCount = 0;
+      let initialPileCount = 0;
+      let gameActive = true;
 
       function render() {
         const container = document.getElementById("piles-container");
@@ -101,71 +141,107 @@
         piles.forEach((count, i) => {
           const col = document.createElement("div");
           col.className = "pile-col";
-          col.onclick = () => selectPile(i);
+          if (selectedPile !== -1 && selectedPile !== i)
+            col.classList.add("locked");
+
+          col.onclick = () => {
+            if (gameActive) selectStone(i);
+          };
+
           for (let s = 0; s < count; s++) {
             const stone = document.createElement("div");
             stone.className = "stone-sprite";
-            stone.style.backgroundImage = `url('${stoneUrl}')`;
             col.appendChild(stone);
           }
           container.appendChild(col);
         });
       }
 
-      function selectPile(i) {
+      function selectStone(i) {
         if (piles[i] > 0 && (selectedPile === -1 || selectedPile === i)) {
-          selectedPile = i;
+          if (selectedPile === -1) {
+            selectedPile = i;
+            initialPileCount = piles[i];
+          }
           piles[i]--;
-          removeCount++;
           document.getElementById("confirm-btn").disabled = false;
           render();
         }
       }
 
       function playerMove() {
+        if (!gameActive) return;
         selectedPile = -1;
-        removeCount = 0;
         document.getElementById("confirm-btn").disabled = true;
-        if (checkWin()) return;
 
-        document.getElementById("status").innerText = "AI_CALCULATING...";
-        setTimeout(aiMove, 800);
+        if (checkGameOver("AI")) return;
+
+        document.getElementById("status").innerText = "SYSTEM_THINKING...";
+        setTimeout(aiMove, 1000);
       }
 
       function aiMove() {
-        // Nim-sum (XOR) strategy
+        // Optimal Nim Strategy (Misere Play logic)
         let nimSum = piles.reduce((a, b) => a ^ b, 0);
+        let pilesWithMoreThanOne = piles.filter((p) => p > 1).length;
 
-        if (nimSum !== 0) {
-          for (let i = 0; i < piles.length; i++) {
-            let target = piles[i] ^ nimSum;
-            if (target < piles[i]) {
-              piles[i] = target;
-              break;
-            }
-          }
+        if (pilesWithMoreThanOne <= 1) {
+          // Special Misere Rule: Leave an odd number of piles with 1 stone
+          let pilesRemaining = piles.filter((p) => p > 0).length;
+          let targetIdx = piles.findIndex((p) => p > 1);
+          if (targetIdx === -1) targetIdx = piles.findIndex((p) => p > 0);
+
+          let stonesLeft = piles.filter((p) => p > 0).length;
+          piles[targetIdx] = stonesLeft % 2 === 0 ? 1 : 0;
         } else {
-          let idx = piles.findIndex((p) => p > 0);
-          if (idx !== -1) piles[idx] = Math.max(0, piles[idx] - 1);
+          if (nimSum !== 0) {
+            for (let i = 0; i < piles.length; i++) {
+              let target = piles[i] ^ nimSum;
+              if (target < piles[i]) {
+                piles[i] = target;
+                break;
+              }
+            }
+          } else {
+            // Random fallback if losing
+            let idx = piles.findIndex((p) => p > 0);
+            piles[idx] -= 1;
+          }
         }
 
         render();
-        if (!checkWin())
+        if (!checkGameOver("PLAYER")) {
           document.getElementById("status").innerText = "YOUR_TURN";
+        }
       }
 
-      function checkWin() {
+      function checkGameOver(nextTurn) {
         if (piles.every((p) => p === 0)) {
-          document.getElementById("status").innerText = "GAME_OVER";
+          gameActive = false;
+          const status = document.getElementById("status");
+          const confirmBtn = document.getElementById("confirm-btn");
+
+          confirmBtn.style.display = "none";
+          document.getElementById("game-over-ui").style.display = "block";
+
+          // In Misere play, the one who takes the last stone LOSES.
+          // If it was supposed to be the AI's turn, the PLAYER took the last stone.
+          if (nextTurn === "AI") {
+            status.innerText = "PROTOCOL_FAILURE: YOU_LOST";
+            status.className = "lose";
+          } else {
+            status.innerText = "PROTOCOL_SUCCESS: AI_DEFEATED";
+            status.className = "win";
+          }
           return true;
         }
         return false;
       }
 
-      render();
+      window.onload = () => {
+        document.getElementById("status").innerText = "YOUR_TURN";
+        render();
+      };
     </script>
-    <div style="text-align: center; margin-top: 40px">
-      <a href="../index.html" class="back-link">BACK TO ARCHIVE</a>
-    </div>
   </body>
 </html>
