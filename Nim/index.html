@@ -36,6 +36,21 @@
         margin: 30px 0;
         min-height: 140px;
       }
+      .back-link {
+        display: block;
+        margin-top: 60px;
+        text-align: center;
+        color: var(--gold);
+        text-decoration: none;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 2px;
+        transition: 0.3s;
+      }
+      .back-link:hover {
+        letter-spacing: 4px;
+        text-shadow: 0 0 10px var(--gold);
+      }
       .pile-col {
         display: flex;
         flex-direction: column-reverse;
@@ -149,5 +164,8 @@
 
       render();
     </script>
+    <div style="text-align: center; margin-top: 40px">
+      <a href="../index.html" class="back-link">BACK TO ARCHIVE</a>
+    </div>
   </body>
 </html>
