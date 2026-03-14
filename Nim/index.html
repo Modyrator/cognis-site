@@ -2,6 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>Cognis – Nim Protocol</title>
     <style>
       :root {
@@ -43,7 +47,8 @@
         display: flex;
         flex-direction: column-reverse;
         gap: 5px;
-        padding: 10px;
+        padding: 20px 15px; /* Mobile friendly */
+        min-width: 50px;
         cursor: pointer;
         border: 1px solid transparent;
         border-radius: 10px;
@@ -53,14 +58,17 @@
         border: 1px solid var(--soft-teal);
         background: rgba(127, 189, 176, 0.1);
       }
+      .pile-col:active {
+        background: rgba(127, 189, 176, 0.3);
+      }
       .pile-col.locked {
         opacity: 0.5;
         filter: grayscale(1);
         cursor: not-allowed;
       }
       .stone-sprite {
-        width: 30px;
-        height: 30px;
+        width: 40px; /* Mobile friendly */
+        height: 40px;
         background-size: contain;
         background-repeat: no-repeat;
         background-image: url("nimstone.png");
@@ -164,24 +172,26 @@
       }
 
       function aiMove() {
+        const errorChance = 0.6;
         let nimSum = piles.reduce((a, b) => a ^ b, 0);
-        let targetPile = -1;
-        let stonesToRemove = 0;
+        let shouldMakeMistake = Math.random() < errorChance;
 
-        // CHECK FOR ENDGAME (MISERE PLAY)
-        // If all piles except one will have 0 or 1 stones after the move
-        let pilesGreaterThanOne = piles.filter((p) => p > 1).length;
-
-        if (pilesGreaterThanOne === 1) {
-          // To win Misere, we must leave an ODD number of piles with 1 stone
-          let otherPilesCount = piles.filter((p) => p === 1).length;
-          let indexToChange = piles.findIndex((p) => p > 1);
-
-          // If current 1-stone piles are even, leave 1 stone. If odd, leave 0.
-          piles[indexToChange] = otherPilesCount % 2 === 0 ? 1 : 0;
+        if (shouldMakeMistake || nimSum === 0) {
+          let playablePiles = piles
+            .map((count, i) => (count > 0 ? i : -1))
+            .filter((i) => i !== -1);
+          let randomIdx =
+            playablePiles[Math.floor(Math.random() * playablePiles.length)];
+          let randomTake = Math.floor(Math.random() * piles[randomIdx]) + 1;
+          piles[randomIdx] -= randomTake;
         } else {
-          // STANDARD OPTIMAL NIM STRATEGY
-          if (nimSum !== 0) {
+          // Perfect Strategy
+          let pilesGreaterThanOne = piles.filter((p) => p > 1).length;
+          if (pilesGreaterThanOne === 1) {
+            let otherPilesCount = piles.filter((p) => p === 1).length;
+            let indexToChange = piles.findIndex((p) => p > 1);
+            piles[indexToChange] = otherPilesCount % 2 === 0 ? 1 : 0;
+          } else {
             for (let i = 0; i < piles.length; i++) {
               let targetSize = piles[i] ^ nimSum;
               if (targetSize < piles[i]) {
@@ -189,10 +199,6 @@
                 break;
               }
             }
-          } else {
-            // Losing position: make a minimal move and wait for player error
-            let idx = piles.findIndex((p) => p > 0);
-            piles[idx] -= 1;
           }
         }
 
@@ -208,8 +214,6 @@
           const status = document.getElementById("status");
           document.getElementById("confirm-btn").style.display = "none";
           document.getElementById("game-over-ui").style.display = "block";
-
-          // Misere Rule: Last player to move LOSES.
           if (nextTurn === "AI") {
             status.innerText = "PROTOCOL_FAILURE: YOU_LOST";
             status.className = "lose";
