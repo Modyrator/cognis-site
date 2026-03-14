@@ -172,7 +172,7 @@
       }
 
       function aiMove() {
-        const errorChance = 0.6;
+        const errorChance = 0.4;
         let nimSum = piles.reduce((a, b) => a ^ b, 0);
         let shouldMakeMistake = Math.random() < errorChance;
 
